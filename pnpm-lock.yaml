@@ -33,6 +33,58 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
 
+  packages/ai-provider:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
+
+  packages/analytics:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
+
+  packages/auth:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
+
+  packages/billing:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
+
   packages/config:
     dependencies:
       '@forge/shared':
@@ -59,7 +111,46 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
 
+  packages/email:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
+
+  packages/jobs:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
+
   packages/shared: {}
+
+  packages/storage:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@26.2.0)(supports-color@7.2.0)
 
 packages:
 
