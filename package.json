@@ -1,0 +1,35 @@
+{
+  "name": "forge",
+  "version": "0.0.1",
+  "description": "Master SaaS Framework for building independent acquisition-ready SaaS products",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@11.21.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test"
+  },
+  "keywords": [
+    "saas",
+    "framework",
+    "typescript",
+    "monorepo"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@playwright/test": "^1.40.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.5.6",
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
+  }
+}
