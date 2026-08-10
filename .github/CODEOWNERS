@@ -1,0 +1,45 @@
+# Forge Code Ownership
+
+# Framework packages
+/packages/shared/ @framework-team
+/packages/domain/ @framework-team
+/packages/config/ @framework-team
+/packages/db/ @framework-team
+/packages/ui/ @framework-team
+/packages/testing/ @framework-team
+
+# Ports
+/packages/auth/ @framework-team
+/packages/billing/ @framework-team
+/packages/email/ @framework-team
+/packages/analytics/ @framework-team
+/packages/storage/ @framework-team
+/packages/jobs/ @framework-team
+/packages/ai-provider/ @framework-team
+/packages/reporting/ @framework-team
+
+# Adapters
+/packages/adapters/ @framework-team
+
+# Tools
+/tools/ @framework-team
+
+# AI governance
+/.ai/ @framework-team
+
+# Documentation
+/docs/ @framework-team
+
+# GitHub
+/.github/ @framework-team
+
+# Root configuration
+/package.json @framework-team
+/pnpm-workspace.yaml @framework-team
+/turbo.json @framework-team
+/tsconfig.json @framework-team
+/eslint.config.js @framework-team
+
+# Products (individual team ownership)
+/apps/jwt-scanner/ @jwt-scanner-team
+/apps/[other-product]/ @respective-team

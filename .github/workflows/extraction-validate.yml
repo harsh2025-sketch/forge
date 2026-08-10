@@ -1,0 +1,50 @@
+# Extraction Validation
+
+This workflow validates every product can be extracted (monthly).
+
+```yaml
+name: Extraction Validation
+
+on:
+  schedule:
+    - cron: '0 2 1 * *'  # 2 AM on first day of month
+  workflow_dispatch:
+
+jobs:
+  validate-extraction:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        product: [product-1, product-2, ..., product-20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Extract product
+        run: pnpm extract-product ${{ matrix.product }}
+
+      - name: Validate extracted repo
+        run: |
+          cd ${{ matrix.product }}-extracted
+          pnpm install --frozen-lockfile
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+
+      - name: Test Docker build
+        run: |
+          cd ${{ matrix.product }}-extracted
+          docker build -t ${{ matrix.product }}:test .
+
+      - name: Test docker-compose
+        run: |
+          cd ${{ matrix.product }}-extracted
+          docker compose up --build --detach
+          sleep 5
+          curl -f http://localhost:3000/api/health || exit 1
+          docker compose down
+```
