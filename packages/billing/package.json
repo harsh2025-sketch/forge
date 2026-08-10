@@ -1,0 +1,28 @@
+{
+  "name": "@forge/billing",
+  "version": "0.0.1",
+  "description": "Forge billing port — provider-neutral BillingPort, BillingWebhookHandler and entitlement contracts (no vendor SDK)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@forge/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
+  }
+}
