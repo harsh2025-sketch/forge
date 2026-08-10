@@ -22,7 +22,6 @@
     "@forge/shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
     "typescript": "^5.8.3",
     "vitest": "^1.0.0"
   }

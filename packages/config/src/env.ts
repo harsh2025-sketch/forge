@@ -17,7 +17,6 @@ export interface EnvFieldOptions<T> {
   readonly required?: boolean;
   readonly defaultValue?: T;
   readonly secret?: boolean;
-  readonly description?: string;
 }
 
 /**
@@ -26,7 +25,7 @@ export interface EnvFieldOptions<T> {
  * - required: if true and no value present in source, loadConfig fails.
  * - secret: if true, value is redacted in inspection helpers and never
  *           appears in error messages.
- * - defaultValue: used when key is missing and required is false.
+ * - defaultValue: used when key is missing and not required.
  * - parse: converts raw string -> T, should throw on invalid.
  */
 export interface EnvField<T> {
@@ -34,7 +33,6 @@ export interface EnvField<T> {
   readonly secret: boolean;
   readonly defaultValue?: T;
   readonly parse: (raw: string) => T;
-  readonly description?: string;
 }
 
 /**
@@ -64,27 +62,27 @@ export function getEnvSource(overrides?: EnvSource): EnvSource {
   if (overrides !== undefined) {
     return { ...overrides };
   }
-  if (typeof process !== "undefined" && process.env) {
-    return { ...(process.env as Record<string, string | undefined>) };
+  const maybeProcess = (
+    globalThis as unknown as {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process;
+  if (maybeProcess?.env) {
+    return { ...maybeProcess.env };
   }
   return {};
-}
-
-/**
- * Reads a single raw string value from an EnvSource without parsing.
- * Returns undefined if the key is not present.
- */
-export function readRawEnv(
-  key: string,
-  source?: EnvSource
-): string | undefined {
-  const env = getEnvSource(source);
-  return env[key];
 }
 
 // ---------------------------------------------------------------------------
 // Field factories — deterministic, no silent coercion
 // ---------------------------------------------------------------------------
+
+function isRequiredByDefault<T>(options: EnvFieldOptions<T>): boolean {
+  if (options.required === true) return true;
+  if (options.required === false) return false;
+  if (options.defaultValue !== undefined) return false;
+  return true;
+}
 
 /**
  * Defines a string field.
@@ -95,12 +93,11 @@ export function readRawEnv(
 export function defineString(
   options: EnvFieldOptions<string> = {}
 ): EnvField<string> {
-  const isRequired = options.required === true;
+  const isRequired = isRequiredByDefault(options);
   return {
     required: isRequired,
     secret: options.secret ?? false,
     defaultValue: options.defaultValue,
-    description: options.description,
     parse: (raw: string) => raw,
   };
 }
@@ -114,13 +111,15 @@ export function defineString(
 export function defineNumber(
   options: EnvFieldOptions<number> = {}
 ): EnvField<number> {
-  const isRequired = options.required === true;
+  const isRequired = isRequiredByDefault(options);
   return {
     required: isRequired,
     secret: options.secret ?? false,
     defaultValue: options.defaultValue,
-    description: options.description,
     parse: (raw: string) => {
+      if (typeof raw !== "string") {
+        throw new Error("expected a string value");
+      }
       const trimmed = raw.trim();
       if (trimmed === "") {
         throw new Error("expected a valid number, received empty string");
@@ -146,13 +145,15 @@ export function defineNumber(
 export function defineBoolean(
   options: EnvFieldOptions<boolean> = {}
 ): EnvField<boolean> {
-  const isRequired = options.required === true;
+  const isRequired = isRequiredByDefault(options);
   return {
     required: isRequired,
     secret: options.secret ?? false,
     defaultValue: options.defaultValue,
-    description: options.description,
     parse: (raw: string) => {
+      if (typeof raw !== "string") {
+        throw new Error("expected a string value");
+      }
       const normalized = raw.trim().toLowerCase();
       if (
         normalized === "true" ||
@@ -179,6 +180,8 @@ export function defineBoolean(
  * Defines an enum field with explicit allowed values.
  *
  * Parsing is exact string match (case-sensitive). No coercion.
+ * Whitespace is not trimmed for enums to keep exact-match semantics;
+ * if trimming is desired, consumers should trim before defining values.
  */
 export function defineEnum<T extends string>(
   values: readonly T[],
@@ -187,13 +190,15 @@ export function defineEnum<T extends string>(
   if (!Array.isArray(values) || values.length === 0) {
     throw new Error("defineEnum requires a non-empty values array");
   }
-  const isRequired = options.required === true;
+  const isRequired = isRequiredByDefault(options);
   return {
     required: isRequired,
     secret: options.secret ?? false,
     defaultValue: options.defaultValue,
-    description: options.description,
     parse: (raw: string) => {
+      if (typeof raw !== "string") {
+        throw new Error("expected a string value");
+      }
       if ((values as readonly string[]).includes(raw)) {
         return raw as T;
       }
@@ -210,11 +215,13 @@ export function defineEnum<T extends string>(
  * Loads and validates config from an EnvSource against a schema.
  *
  * Behavior:
- * - If a key's raw value is undefined (missing), then:
+ * - If a key's raw value is undefined or null (missing), then:
  *    - if field.required === true -> Result err (ConfigError)
  *    - else if field.defaultValue !== undefined -> use defaultValue
  *    - else -> set value to undefined (optional without default)
- * - If raw value is present (even ""), parse() is invoked.
+ * - If raw value is present but not a string, returns deterministic ConfigError
+ *   (secret fields use generic message).
+ * - If raw value is present string (even ""), parse() is invoked.
  *   Parse failures produce a ConfigError with a deterministic message.
  *   For secret fields, the message is generic and never includes the raw value.
  *
@@ -230,9 +237,10 @@ export function loadConfig<T extends Record<string, unknown>>(
 
   for (const key of Object.keys(schema) as (keyof T)[]) {
     const field = schema[key];
-    const raw = env[key as string];
+    const raw = (env as Record<string, unknown>)[key as string];
 
-    if (raw === undefined) {
+    // Treat undefined and null as missing
+    if (raw === undefined || raw === null) {
       if (field.required) {
         return err(
           new ConfigError(`Missing required configuration: ${String(key)}`, {
@@ -246,6 +254,17 @@ export function loadConfig<T extends Record<string, unknown>>(
         config[key as string] = undefined;
       }
       continue;
+    }
+
+    if (typeof raw !== "string") {
+      const message = field.secret
+        ? `Invalid configuration for ${String(key)}: validation failed`
+        : `Invalid configuration for ${String(key)}: expected a string value`;
+      return err(
+        new ConfigError(message, {
+          details: { field: String(key) },
+        })
+      );
     }
 
     try {
@@ -281,16 +300,6 @@ export function loadConfigOrThrow<T extends Record<string, unknown>>(
     throw result.error;
   }
   return result.value;
-}
-
-/**
- * Validates config without throwing. Alias for loadConfig for semantic clarity.
- */
-export function validateConfig<T extends Record<string, unknown>>(
-  schema: EnvSchema<T>,
-  source?: EnvSource
-): Result<T, ConfigError> {
-  return loadConfig(schema, source);
 }
 
 // ---------------------------------------------------------------------------
@@ -335,39 +344,12 @@ export function toSafeConfigString<T extends Record<string, unknown>>(
 }
 
 /**
- * Helper to check if a field is marked secret.
- */
-export function isSecretField<T>(
-  field: EnvField<T>
-): boolean {
-  return field.secret;
-}
-
-/**
- * Example base schema for framework-level env.
- * Consumers may extend this for their own environment.
- *
- * Currently minimal: NODE_ENV and LOG_LEVEL illustrate required/optional/default behavior.
- * This is provider-neutral and does not assume database, auth, billing, etc.
+ * Minimal base schema for framework-level env.
+ * Currently only NODE_ENV is included as the genuinely required provider-neutral
+ * example. Consumers extend this for their own environment.
  */
 export const baseEnvSchema = {
   NODE_ENV: defineEnum(["development", "test", "production"] as const, {
-    required: false,
     defaultValue: "development" as const,
-    description: "Runtime environment",
   }),
-  LOG_LEVEL: defineEnum(
-    ["debug", "info", "warn", "error"] as const,
-    {
-      required: false,
-      defaultValue: "info" as const,
-      description: "Log verbosity",
-    }
-  ),
 } as const;
-
-// Convenience type for base env
-export type BaseEnv = {
-  NODE_ENV: "development" | "test" | "production";
-  LOG_LEVEL: "debug" | "info" | "warn" | "error";
-};

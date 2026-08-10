@@ -10,6 +10,7 @@ import {
   redactConfig,
   toSafeConfigString,
 } from "../env.js";
+import type { EnvSource } from "../env.js";
 import { ConfigError } from "../errors.js";
 
 describe("env — configuration kernel", () => {
@@ -458,6 +459,169 @@ describe("env — configuration kernel", () => {
       } as const;
       const numResult = loadConfig(numSchema, { N: "" });
       expect(numResult.ok).toBe(false);
+    });
+  });
+
+  describe("required-by-default semantics", () => {
+    it("defineString() without options is required and fails when missing", () => {
+      const schema = {
+        REQUIRED_STR: defineString(),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Missing required configuration: REQUIRED_STR/);
+      }
+    });
+
+    it("defineNumber() without options is required", () => {
+      const schema = {
+        REQUIRED_NUM: defineNumber(),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Missing required configuration: REQUIRED_NUM/);
+      }
+    });
+
+    it("defineBoolean() without options is required", () => {
+      const schema = {
+        REQUIRED_BOOL: defineBoolean(),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Missing required configuration: REQUIRED_BOOL/);
+      }
+    });
+
+    it("defineEnum() without options is required", () => {
+      const schema = {
+        REQUIRED_ENUM: defineEnum(["a", "b"] as const),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Missing required configuration: REQUIRED_ENUM/);
+      }
+    });
+
+    it("explicit required:false remains optional", () => {
+      const schema = {
+        OPTIONAL: defineString({ required: false }),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.OPTIONAL).toBeUndefined();
+    });
+
+    it("defaultValue makes field optional even though bare is required", () => {
+      const schema = {
+        WITH_DEFAULT: defineString({ defaultValue: "fallback" }),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.WITH_DEFAULT).toBe("fallback");
+    });
+
+    it("explicit required:true overrides defaultValue (remains required)", () => {
+      const schema = {
+        EXPLICIT_REQUIRED: defineString({ required: true, defaultValue: "ignored" }),
+      } as const;
+      const result = loadConfig(schema, {});
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Missing required configuration: EXPLICIT_REQUIRED/);
+      }
+    });
+  });
+
+  describe("null / unknown input safety", () => {
+    it("treats null as missing for required field", () => {
+      const schema = {
+        REQUIRED: defineString({ required: true }),
+      } as const;
+      const source = { REQUIRED: null } as unknown as EnvSource;
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Missing required configuration: REQUIRED/);
+      }
+    });
+
+    it("treats null as missing for optional field with default", () => {
+      const schema = {
+        WITH_DEFAULT: defineNumber({ defaultValue: 99 }),
+      } as const;
+      const source = { WITH_DEFAULT: null } as unknown as EnvSource;
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.value.WITH_DEFAULT).toBe(99);
+    });
+
+    it("fails deterministically for non-string runtime value on non-secret field", () => {
+      const schema = {
+        PORT: defineNumber({ required: true }),
+      } as const;
+      const source = { PORT: 123 as unknown as string } as unknown as EnvSource;
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Invalid configuration for PORT: expected a string value/);
+        expect(result.error.details).toEqual({ field: "PORT" });
+      }
+    });
+
+    it("fails with generic message for non-string runtime value on secret field without leaking raw", () => {
+      const schema = {
+        SECRET_PORT: defineNumber({ required: true, secret: true }),
+      } as const;
+      const source = { SECRET_PORT: 12345 as unknown as string } as unknown as EnvSource;
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toBe("Invalid configuration for SECRET_PORT: validation failed");
+        expect(result.error.message).not.toContain("12345");
+      }
+    });
+
+    it("rejects object runtime value deterministically", () => {
+      const schema = {
+        FLAG: defineBoolean({ required: true }),
+      } as const;
+      const source = { FLAG: { foo: "bar" } as unknown as string } as unknown as EnvSource;
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toMatch(/Invalid configuration for FLAG/);
+      }
+    });
+
+    it("malformed secret values do not leak raw value in cause", () => {
+      const schema = {
+        SECRET_BOOL: defineBoolean({ required: true, secret: true }),
+      } as const;
+      const source = { SECRET_BOOL: "not-a-bool-raw-value" };
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toBe("Invalid configuration for SECRET_BOOL: validation failed");
+        expect(result.error.message).not.toContain("not-a-bool");
+        // cause should not be included in message for secret
+      }
+    });
+
+    it("null for secret required field is treated as missing, not leaked", () => {
+      const schema = {
+        SECRET: defineString({ required: true, secret: true }),
+      } as const;
+      const source = { SECRET: null } as unknown as EnvSource;
+      const result = loadConfig(schema, source);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toBe("Missing required configuration: SECRET");
+      }
     });
   });
 });

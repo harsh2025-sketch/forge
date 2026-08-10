@@ -25,7 +25,7 @@ export {
 } from "./product-manifest.js";
 
 // Environment / config
-export type { BaseEnv, EnvField, EnvFieldOptions, EnvSchema, EnvSource } from "./env.js";
+export type { EnvField, EnvFieldOptions, EnvSchema, EnvSource } from "./env.js";
 export {
   baseEnvSchema,
   defineBoolean,
@@ -33,11 +33,8 @@ export {
   defineNumber,
   defineString,
   getEnvSource,
-  isSecretField,
   loadConfig,
   loadConfigOrThrow,
-  readRawEnv,
   redactConfig,
   toSafeConfigString,
-  validateConfig,
 } from "./env.js";

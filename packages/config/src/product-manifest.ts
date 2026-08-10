@@ -37,13 +37,13 @@ export type Capability = (typeof Capability)[keyof typeof Capability];
 /**
  * Plan definition for product manifest.
  * Minimal provider-neutral shape: id, name, optional description,
- * optional Stripe price reference, optional limits, optional features.
+ * optional price reference, optional limits, optional features.
  */
 export interface PlanDefinition {
   readonly id: string;
   readonly name: string;
   readonly description?: string;
-  readonly stripePriceId?: string;
+  readonly priceId?: string;
   readonly limits?: Readonly<Record<string, number>>;
   readonly features?: readonly string[];
 }
@@ -129,11 +129,11 @@ function validatePlanDefinition(
     );
   }
 
-  if (p.stripePriceId !== undefined && !isNonEmptyString(p.stripePriceId)) {
+  if (p.priceId !== undefined && !isNonEmptyString(p.priceId)) {
     return err(
       new ConfigError(
-        `Invalid plan at index ${index}: stripePriceId must be a non-empty string if provided`,
-        { details: { index, field: "stripePriceId" } }
+        `Invalid plan at index ${index}: priceId must be a non-empty string if provided`,
+        { details: { index, field: "priceId" } }
       )
     );
   }
@@ -188,7 +188,7 @@ function validatePlanDefinition(
     id: p.id as string,
     name: p.name as string,
     description: p.description as string | undefined,
-    stripePriceId: p.stripePriceId as string | undefined,
+    priceId: p.priceId as string | undefined,
     limits: p.limits as Readonly<Record<string, number>> | undefined,
     features: p.features as readonly string[] | undefined,
   });

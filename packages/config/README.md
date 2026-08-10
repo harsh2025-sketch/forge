@@ -13,7 +13,7 @@ Provider-neutral, typed, deterministic, secret-safe configuration boundary.
 - Enforces explicit validation with deterministic errors (no silent coercion)
 - Redacts secrets on inspection
 
-It does **not** know that Clerk, Stripe, Supabase, Resend, Vercel, or AWS exist.
+It does **not** know that authentication, billing, storage, email, or hosting providers exist.
 Configuration provides values to later packages; it does not implement providers.
 
 ## Installation
@@ -38,12 +38,12 @@ import {
   validateProductManifest, parseProductManifestOrThrow, defineProductManifest,
 
   // Env / config
-  type EnvSource, type EnvField, type EnvSchema, type BaseEnv,
+  type EnvSource, type EnvField, type EnvSchema,
   defineString, defineNumber, defineBoolean, defineEnum,
   baseEnvSchema,
-  getEnvSource, readRawEnv,
-  loadConfig, loadConfigOrThrow, validateConfig,
-  redactConfig, toSafeConfigString, isSecretField,
+  getEnvSource,
+  loadConfig, loadConfigOrThrow,
+  redactConfig, toSafeConfigString,
 
   // Errors
   ConfigError, isConfigError,
@@ -53,7 +53,7 @@ import {
 ## How configuration is supplied
 
 Configuration is supplied as a plain record (`EnvSource = Record<string, string | undefined>`).
-In Node, `getEnvSource()` returns a shallow copy of `process.env`. In tests, pass an explicit object.
+In Node, `getEnvSource()` returns a shallow copy of `process.env` via a `globalThis` guard. In tests, pass an explicit object.
 
 ```ts
 const schema = {
@@ -74,22 +74,26 @@ There is no global singleton and no `dotenv` side effect. The caller decides whe
 
 ## Required vs optional vs defaults
 
-- **Required**: `defineString({ required: true })` — missing key => `ConfigError: Missing required configuration: KEY`.
+Fields are **required by default** — bare `defineString()` means required.
+
+- **Required** (default): `defineString()` or `defineString({ required: true })` — missing key => `ConfigError: Missing required configuration: KEY`.
 - **Optional** (no default): `defineString({ required: false })` — missing key => `undefined` in result.
-- **Default**: `defineNumber({ defaultValue: 3000 })` — missing key => default value. Explicit `required: false` is implied.
+- **Default**: `defineNumber({ defaultValue: 3000 })` — missing key => default value. Explicit `required: false` is implied when a default is present.
 
 All three states are typed. See `EnvSchema<T>` which uses `NonNullable` so optional properties (`OPTIONAL?: string`) work naturally.
 
 ## Validation
 
 - String: returned as-is.
-- Number: `Number(trimmed)` with `Number.isFinite` check; rejects `""`, `"abc"`, `"Infinity"`.
+- Number: `Number(trimmed)` with `Number.isFinite` check; rejects `""`, `"abc"`, `"Infinity"`, non-string values.
 - Boolean: accepts `true/false`, `1/0`, `yes/no`, `on/off` case-insensitive; rejects others.
-- Enum: exact match against allowed values.
+- Enum: exact match against allowed values (case-sensitive, no trimming).
 
 Invalid values produce `ConfigError` with code `CONFIG_ERROR` and `details: { field: "KEY" }`. The message is deterministic:
 - Non-secret: `Invalid configuration for KEY: <parse message>`
 - Secret: `Invalid configuration for KEY: validation failed` (raw value never included).
+
+`null` is treated as missing (same as `undefined`). Non-string runtime values (e.g., number, object) produce a deterministic `expected a string value` error without exposing secrets.
 
 No silent coercion: `"abc"` never becomes `0`; invalid input always fails.
 
@@ -99,11 +103,11 @@ Mark fields with `secret: true`:
 
 ```ts
 const schema = {
-  STRIPE_SECRET: defineString({ required: true, secret: true }),
+  API_SECRET: defineString({ required: true, secret: true }),
 } as const;
 
 const config = loadConfigOrThrow(schema, processEnv);
-redactConfig(config, schema);        // { STRIPE_SECRET: "[REDACTED]" }
+redactConfig(config, schema);        // { API_SECRET: "[REDACTED]" }
 toSafeConfigString(config, schema); // JSON with [REDACTED]
 ```
 
@@ -139,26 +143,26 @@ Use `defineProductManifest(manifest)` for typed authoring, `parseProductManifest
 
 Tests use Vitest and isolate environment via explicit `EnvSource` objects — never relying on the developer's real `process.env`.
 
-Covered: valid required, missing required, optional, defaults, invalid, type conversion, secret redaction, isolation, product-manifest validation.
+Covered: valid required, missing required, optional, defaults, invalid, type conversion, secret redaction, isolation, product-manifest validation, required-by-default, null/non-string safety.
 
 Run: `pnpm --filter @forge/config test`
 
 ## Package boundaries
 
-Allowed imports: `@forge/shared`, Node stdlib. No provider SDKs, no Next.js, no React, no Drizzle.
+Allowed imports: `@forge/shared`, Node stdlib via `globalThis`. No provider SDKs, no Next.js, no React, no Drizzle.
 
 ```ts
 // ALLOWED
 import { ConfigError } from "@forge/config";
 
 // FORBIDDEN — would fail CI
-import Stripe from "stripe";
-import { clerk } from "@clerk/nextjs";
+import VendorSDK from "vendor-sdk";
+import { authProvider } from "@vendor/auth";
 ```
 
 ## Node / runtime isolation
 
-`getEnvSource()` guards `process` via `typeof process !== "undefined"`. The package works in Node and returns empty env in browser; it never imports `fs` or Next.js APIs.
+`getEnvSource()` accesses `process.env` only via `globalThis` guard (`(globalThis as unknown as { process?: { env?: Record<string,string|undefined> } }).process`). The package works in Node and returns empty env in browser; it never imports `fs` or framework APIs.
 
 ## Dependencies
 
