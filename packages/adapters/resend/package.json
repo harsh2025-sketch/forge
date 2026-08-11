@@ -1,0 +1,31 @@
+{
+  "name": "@forge/adapter-resend",
+  "version": "0.0.1",
+  "description": "Forge Resend adapter — EmailPort implementation over the Resend SDK (V3 Day 6, P5, P12)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@forge/email": "workspace:*",
+    "@forge/shared": "workspace:*",
+    "resend": "^6.19.0"
+  },
+  "devDependencies": {
+    "@forge/testing": "workspace:*",
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
+  }
+}
