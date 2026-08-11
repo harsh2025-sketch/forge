@@ -1,7 +1,7 @@
 {
   "name": "@forge/adapter-pg-boss",
   "version": "0.0.1",
-  "description": "Forge pg-boss adapter — PostgreSQL-backed JobQueuePort implementation (V3 Day 6, P10, P12)",
+  "description": "Forge pg-boss adapter \u2014 PostgreSQL-backed JobQueuePort implementation (V3 Day 6, P10, P12)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,6 +26,6 @@
   "devDependencies": {
     "@forge/testing": "workspace:*",
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

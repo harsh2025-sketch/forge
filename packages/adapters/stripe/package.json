@@ -1,7 +1,7 @@
 {
   "name": "@forge/adapter-stripe",
   "version": "0.0.1",
-  "description": "Forge Stripe adapter — BillingPort and BillingWebhookHandler implementations over the Stripe SDK (V3 Day 6, P5, P12)",
+  "description": "Forge Stripe adapter \u2014 BillingPort and BillingWebhookHandler implementations over the Stripe SDK (V3 Day 6, P5, P12)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,6 +26,6 @@
   "devDependencies": {
     "@forge/testing": "workspace:*",
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

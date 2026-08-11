@@ -27,7 +27,7 @@ const CONTENT_TYPES: Record<(typeof EXPORT_FORMATS)[number], string> = {
 
 export async function GET(
   request: Request,
-  { params }: { readonly params: { readonly jobId: string } },
+  { params }: { readonly params: Promise<{ readonly jobId: string }> },
 ): Promise<Response> {
   const url = new URL(request.url);
   const rawFormat = url.searchParams.get("format") ?? "json";
@@ -37,6 +37,7 @@ export async function GET(
       { status: 400 },
     );
   }
+  const { jobId } = await params;
 
   const context = await getOrgUserContext(authPort, ensurePlatformOrganization);
   if (!context.ok) {
@@ -49,7 +50,7 @@ export async function GET(
       persistence: getScanPersistence(),
       engine: new ProductEngine(),
     },
-    params.jobId,
+    jobId,
     rawFormat,
   );
   if (!exported.ok) {

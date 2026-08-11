@@ -24,12 +24,9 @@ const nextConfig = {
     // keeps a single lint gate and avoids a second, Next-specific lint run.
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    // Server Actions are used by the product's feature layer.
-    serverActions: {
-      bodySizeLimit: "128kb",
-    },
-  },
+  // Server Actions are enabled by default in Next.js 15 and the product's
+  // action payloads (compact JWTs + project names) are far below the default
+  // body size limit, so no serverActions tuning is required here.
   webpack: (config) => {
     // The repository's source uses NodeNext-style `.js` specifiers that point
     // at `.ts`/`.tsx` sources (e.g. `import { x } from "./parser.js"`). Map

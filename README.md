@@ -1,231 +1,360 @@
-# Forge — Master SaaS Framework
+<div align="center">
 
-Forge is a **modular monolith** that powers **20 independent SaaS products** from a single repository. Each product is a self-contained Next.js application with isolated database schema and domain logic — yet all share a common infrastructure of **ports**, **adapters**, and **shared utilities**.
+# ⚒️ Forge
 
-Every product in Forge is designed to be **acquisition-ready**: it can be extracted from the monorepo at any time and deployed as a standalone application.
+### The master SaaS framework for building **independent, acquisition-ready products** from one repository.
 
-## Quick Links
-
-- **[Framework Architecture](./docs/FRAMEWORK.md)** — Philosophy, repository structure, technology stack
-- **[Product Archetypes](./docs/ARCHETYPES.md)** — 6 product types and their contracts
-- **[Frozen Principles](./.\ai\architecture-rules.md)** — 22 immutable architectural rules
-- **[Import Boundaries](./\.ai\boundaries.md)** — Package dependency graph (machine-enforced)
-- **[Implementation Patterns](./\.ai\patterns)** — Server Actions, engines, adapters, jobs
-
-## Core Concepts
-
-### Modular Monolith, Not Microservices
-
-Each product is a complete Next.js full-stack application (web + optional worker). Products do not scale independently; they scale together. This simplicity makes solo development feasible.
-
-### Frozen Architecture
-
-The 22 principles are immutable. Violations are machine-enforced by:
-- **ESLint boundaries plugin** — Prevents forbidden imports
-- **TypeScript project references** — Catches circular dependencies
-- **arch-check tool** — Validates vendor isolation, domain purity, infrastructure separation
-
-### One Port, One Adapter
-
-Every external capability (auth, billing, email, jobs, storage) is accessed through a **port interface**. Each port has exactly one adapter implementation at any time.
-
-Replacing a provider requires:
-1. Implementing a new adapter
-2. Passing conformance tests
-3. Updating `apps/[product]/src/providers.ts`
-4. Zero business logic changes
-
-### Domain Purity
-
-Business logic lives in `src/domain/engine.ts` as pure functions:
-
-```typescript
-export async function execute(
-  input: Input,
-  config: Config,
-  onProgress: (p: number) => void
-): Promise<Result<Output, Error>> {
-  // Pure domain logic
-  // Zero imports: next, react, @forge/db, vendor SDKs, adapters
-  // Only: zod, @forge/shared, @forge/domain, local types, Node.js std lib
-}
-```
-
-Infrastructure lives in Server Actions that call the domain and persist results.
-
-### Data Extractability
-
-Each product owns a named PostgreSQL schema. All product data is extractable at any time:
-
-```bash
-pg_dump --schema=my_analyzer > my_analyzer.sql
-# Later...
-docker compose up  # Standalone repo with extracted schema
-```
-
-Shared platform tables carry `product_id` for tenant scoping and extractability.
+Forge is a modular-monolith framework that hosts each product as a self-contained Next.js
+application behind a frozen, machine-enforced architecture — **ports, adapters, pure domain
+logic, and product-scoped data** — so every product can be extracted and sold standalone
+at any time.
 
 ---
 
-## Repository Structure
+**TypeScript · Next.js 15 · Drizzle ORM · PostgreSQL · Turborepo · pnpm · Vitest · GitHub Actions**
+
+</div>
+
+---
+
+## What is Forge?
+
+Forge solves a single problem: **how do you build many independent SaaS products without
+maintaining many independent codebases?**
+
+Each Forge product is a complete Next.js application — its own domain logic, its own
+PostgreSQL schema, its own UI, its own documentation — yet all products share one repository,
+one build system, one test harness, and one set of infrastructure contracts.
+
+The architecture is **frozen** (22 immutable principles, `docs/architecture/FORGE-MASTER-ARCHITECTURE-V3.md`)
+and **machine-enforced**: every commit is checked against the dependency graph, and violations
+fail CI. Product code is written against provider-neutral **ports**; infrastructure vendors
+(Clerk, Stripe, Resend, …) live behind **adapters** and can be swapped without touching
+product logic.
+
+> **Status:** Tasks 001–013 of the frozen V3 plan are implemented and integrated
+> (framework, tooling, CI, and the first product — JWT Scanner). Task 014 delivers final
+> hardening, documentation, and launch readiness. Task 015 is manual testing on a real
+> Windows workstation. See [Current framework status](#current-framework-status).
+
+---
+
+## Quick start
+
+```bash
+pnpm install       # install workspace dependencies (pnpm 11.21.0 — pinned via packageManager)
+pnpm build         # compile every package and product
+pnpm arch-check    # enforce the frozen architecture (package + import boundaries)
+pnpm validate-docs # documentation completeness gate
+pnpm lint          # ESLint + boundary rules
+pnpm typecheck     # strict TypeScript across the workspace
+pnpm test          # 1000+ unit + conformance + integration tests
+```
+
+Run the first product locally **without any credentials or database** (deterministic test mode):
+
+```bash
+cd apps/jwt-scanner
+AUTH_MODE=test BILLING_MODE=test DATA_MODE=memory pnpm dev
+# → http://localhost:3000 — signed in as scanner@example.test
+```
+
+Full manual testing instructions for Windows + VS Code:
+**[docs/MANUAL_TESTING.md](docs/MANUAL_TESTING.md)**
+
+---
+
+## Architecture at a glance
+
+<p align="center">
+  <img src="docs/assets/forge-architecture.svg" alt="Forge V3 architecture diagram" width="820" />
+</p>
+
+### The data flow of every product
+
+```
+Product (apps/*)
+  │  server actions + pages compose ports from providers.ts
+  ▼
+src/providers.ts  ── the composition root · the ONLY file allowed to import adapters
+  │
+  ├──► AuthPort ◄── @forge/adapter-clerk ── @clerk/backend
+  ├──► BillingPort ◄── @forge/adapter-stripe ── stripe
+  ├──► EmailPort ◄── @forge/adapter-resend ── resend
+  ├──► JobQueuePort ◄── @forge/adapter-pg-boss ── pg-boss
+  │
+  └──► PostgreSQL ── Drizzle ORM (P7: the database is NOT a provider; the
+       connection string is the replacement boundary)
+```
+
+In parallel, each product keeps:
+
+- **`src/domain/`** — pure business logic. Zero imports from Next.js, React, Drizzle, vendor
+  SDKs, or adapters. Inputs are Zod-validated; output is a `Result<T, E>`.
+- **`src/db/`** — the product's own named PostgreSQL schema (`jwt_scanner`, …) with
+  `withOrg()` tenant scoping on every query.
+- **`src/features/`** — server actions that validate, authorize, call the domain engine,
+  persist results, and reach external services **only through ports**.
+- **`src/theme/`** — design tokens; each product defines its own visual identity.
+
+---
+
+## Repository map
 
 ```
 forge/
 ├── apps/
-│   └── [product-name]/          # 20 products, each a full Next.js app
+│   └── jwt-scanner/          # Product 1 — analyzer archetype (Task 013)
 │       ├── src/
-│       │   ├── app/             # Next.js App Router
-│       │   ├── domain/          # Pure business logic
-│       │   ├── features/        # Server Actions + UI
-│       │   ├── db/              # Drizzle schema + migrations
-│       │   ├── worker/          # Background jobs (optional)
-│       │   └── providers.ts     # Sole file importing adapters
-│       ├── docs/                # 11 required product docs
-│       ├── e2e/                 # Playwright tests
-│       └── product.manifest.ts  # Archetype, capabilities, plans
+│       │   ├── app/          #   Next.js App Router (landing, dashboard, webhook, export)
+│       │   ├── domain/       #   pure JWT analysis engine (none_alg, weak_hmac, …)
+│       │   ├── features/     #   server actions + services (scans, billing, auth)
+│       │   ├── db/           #   jwt_scanner schema + migrations
+│       │   ├── dev-mode/     #   deterministic test-mode port seams (AUTH_MODE=test, …)
+│       │   └── providers.ts  #   composition root — the only adapter-importing file
+│       ├── docs/             # 10 required product documents
+│       ├── e2e/              # Playwright critical path
+│       └── product.manifest.ts  # archetype, capabilities, plans
 │
 ├── packages/
-│   ├── shared/                  # Result, error base types
-│   ├── domain/                  # Archetype contracts, primitives
-│   ├── config/                  # ProductManifest, env schemas
-│   ├── db/                      # Drizzle client, platform schema
-│   ├── ui/                      # React components, theme system
-│   ├── [port packages]/         # auth, billing, email, analytics, storage, jobs
-│   ├── testing/                 # Conformance tests, mocks
+│   ├── shared/               # Result, AppError, pagination — the kernel
+│   ├── config/               # ProductManifest, env schemas
+│   ├── domain/               # archetype contracts + shared primitives (Severity, …)
+│   ├── db/                   # Drizzle client factory, platform schema, withOrg()
+│   ├── ui/                   # React primitives, layouts, theme tokens
+│   ├── auth/  billing/  email/  analytics/  storage/  jobs/  ai-provider/
+│   │                         # PORT packages — provider-neutral interfaces only
+│   ├── reporting/            # ReportTemplate + JSON/Markdown/HTML generators
+│   ├── testing/              # conformance suites, factories, mock adapters
 │   └── adapters/
-│       ├── clerk/               # Clerk → AuthPort
-│       ├── stripe/              # Stripe → BillingPort
-│       ├── resend/              # Resend → EmailPort
-│       ├── posthog/             # PostHog → Analytics + FeatureFlags
-│       ├── pg-boss/             # pg-boss → JobQueuePort (default)
-│       └── [more adapters...]   # supabase-storage, s3, openai, etc.
+│       ├── clerk/            # Clerk → AuthPort
+│       ├── stripe/           # Stripe → BillingPort
+│       ├── resend/           # Resend → EmailPort
+│       └── pg-boss/          # pg-boss → JobQueuePort (default, PostgreSQL-backed)
 │
 ├── tools/
-│   ├── create-product/          # Scaffold new product
-│   ├── arch-check/              # Enforce boundaries
-│   ├── extract-product/         # Extract product for acquisition
-│   └── validate-docs/           # Ensure documentation exists
+│   ├── architecture-check/   # pnpm arch-check — full repository gate
+│   ├── create-product/       # scaffold a new product (all 6 archetypes)
+│   ├── extract-product/      # import an existing app into Forge structure (see below)
+│   ├── extraction-validate/  # validate product extraction readiness
+│   └── validate-docs/        # documentation completeness gate
 │
-├── docs/                        # Framework-level docs
-└── .ai/                         # AI governance rules
-    ├── rules.md                 # 15 governance rules
-    ├── boundaries.md            # Import boundaries
-    ├── architecture-rules.md    # 22 frozen principles
-    └── patterns/                # Implementation patterns
+├── docs/
+│   ├── FRAMEWORK.md          # framework overview
+│   ├── ARCHETYPES.md         # the 6 product archetypes
+│   ├── MANUAL_TESTING.md     # Windows/VS Code manual testing guide
+│   ├── assets/               # diagrams
+│   └── architecture/         # FORGE-MASTER-ARCHITECTURE-V3.md (the frozen spec)
+│
+├── .ai/                      # AI governance — rules, boundaries, patterns, task contract
+└── .github/workflows/        # ci · arch-check · extraction-validate · security-audit
 ```
 
-## Technology Stack
+### Layer rules (machine-enforced)
 
-| Component | Choice |
-|-----------|--------|
-| Language | TypeScript (strict) |
-| Framework | Next.js 15 (App Router) |
-| Styling | Tailwind v3 + shadcn/ui |
-| Validation | Zod |
-| ORM | Drizzle ORM |
-| Database | PostgreSQL |
-| Job Queue | pg-boss (PostgreSQL-backed, no Redis) |
-| Monorepo | Turborepo + pnpm |
-| Testing | Vitest + Playwright |
-| Linting | ESLint + boundaries plugin |
-| Container | Docker |
-| CI/CD | GitHub Actions |
+| Layer | May import | Never imports |
+|---|---|---|
+| `apps/*/src/domain/**` | Zod, `@forge/shared`, `@forge/domain`, local types, Node stdlib | `next`, `react`, `@forge/db`, ports, adapters, vendor SDKs |
+| `apps/*/src/**` (other) | ports, `@forge/db`, `@forge/ui`, `@forge/reporting` | `packages/adapters/*` — except `src/providers.ts` |
+| `packages/[port]` | `@forge/shared` | adapters, vendor SDKs |
+| `packages/adapters/[x]` | its port, `@forge/shared`, its vendor SDK | other ports, other adapters |
+| `packages/db` | `@forge/shared`, drizzle-orm, postgres.js | domain, adapters |
+| `packages/ui` | react, react-dom | domain, db, ports, adapters |
+| `packages/testing` | all ports, `@forge/shared`, vitest | adapters |
+| any `packages/*` | — | `apps/*` |
 
-## Getting Started
+---
 
-```bash
-# Install dependencies
-pnpm install
+## Ports & adapters: how provider-neutrality actually works
 
-# Type check
-pnpm typecheck
+A **port** (`packages/auth`, `packages/billing`, …) is a TypeScript interface describing what a
+capability must do — nothing more. An **adapter** (`packages/adapters/clerk`, …) implements that
+interface for one concrete vendor. The vendor SDK appears **only inside its adapter package**
+(frozen principle P5) and is imported **only by `apps/*/src/providers.ts`**.
 
-# Lint (includes boundary checks)
-pnpm lint
+```ts
+// apps/jwt-scanner/src/providers.ts — the composition root
+import { clerkAuthAdapter, createClerkBackendClient, createClerkTokenVerifier } from "@forge/adapter-clerk";
+import { stripeBillingAdapter, stripeBillingWebhookHandler } from "@forge/adapter-stripe";
 
-# Run tests
-pnpm test
-
-# Run architecture validation
-pnpm arch-check
-
-# Build
-pnpm build
-
-# Development
-pnpm dev
+export const authPort = buildAuthPort(authMode);     // AuthPort
+export const billingPort = buildBillingPort(billingMode); // BillingPort
 ```
 
-## Creating Your First Product
+Product code never sees a vendor type:
+
+```ts
+// apps/jwt-scanner/src/features/scans/service.ts
+import type { AuthPort } from "@forge/auth";          // the port, not the vendor
+import { getOrgUserContext } from "@/features/auth/session";
+
+const context = await getOrgUserContext(deps.auth);   // authPort injected
+```
+
+### Provider swap = 3 steps, zero product changes
+
+1. **Implement** a new adapter that satisfies the port's **conformance suite**
+   (`packages/testing/conformance/` — a passing adapter is a *valid replacement* by definition).
+2. **Wire** it in `apps/jwt-scanner/src/providers.ts` (and the env variables it reads).
+3. **Verify** with `pnpm arch-check` (vendor leakage / adapter bypass rules) and `pnpm test`.
+
+Domain logic, feature services, database schema, report templates, and UI never change.
+Today's implemented adapters prove the claim: `clerk` (AuthPort), `stripe` (BillingPort),
+`resend` (EmailPort), `pg-boss` (JobQueuePort). Every one passes its port's conformance suite.
+
+> **Honest boundary:** PostgreSQL is **not** a provider. `Application → Drizzle → PostgreSQL`
+> is fixed (P7); the `DATABASE_URL` connection string is the replacement boundary. There is
+> deliberately no `IDatabaseAdapter`.
+
+---
+
+## Architecture enforcement
+
+Four independent mechanisms make the frozen architecture a *mechanical* property of the
+repository, not a convention:
+
+| Gate | Command | Catches |
+|---|---|---|
+| **arch-check** | `pnpm arch-check` | vendor leakage, adapter bypass, adapter→adapter, port→adapter, domain→infrastructure, cross-product imports, package→app, reporting/UI/testing neutrality, DB boundary, unscoped tenant queries, missing `product_id`, workspace/dependency-direction violations, circular package deps, manifest/placement errors |
+| **ESLint** | `pnpm lint` | boundary violations and code-quality rules across every package |
+| **TypeScript** | `pnpm typecheck` | strict-mode type errors, unresolved internal imports |
+| **Documentation** | `pnpm validate-docs` | missing/stub framework and product documents (P14) |
+
+CI runs all gates on every push/PR plus a **dependency security audit**
+(`pnpm audit --audit-level=high` — high/critical blocks merge, V3 §13.2) and a monthly
+**extraction validation** run. The pre-commit hook runs `pnpm arch-check` locally.
+
+---
+
+## Testing & conformance model
+
+- **Unit tests** — pure domain logic (`src/domain/__tests__`), shared primitives, and
+  feature services, run with Vitest.
+- **Conformance suites** — `packages/testing/conformance/` defines the exact contract of every
+  port. Any adapter that passes the suite is a valid replacement (P12).
+- **Neutrality tests** — every port, adapter, and layer package pins its own import surface
+  (`*__tests__/neutrality.test.ts`), so boundary violations are caught at the package level too.
+- **Integration tests** — `apps/jwt-scanner/src/__tests__/integration/` exercises the real
+  service layer (auth port → engine → persistence → reporting) with the canonical
+  `@forge/testing` mocks and in-memory persistence.
+- **E2E** — Playwright critical path (signup → scan → findings → export) runs the real app in
+  deterministic test mode (`AUTH_MODE=test BILLING_MODE=test DATA_MODE=memory`).
+- **Coverage** is a quality *signal*, not a gate (P22).
+
+Current suite: **24 packages, 44 test tasks, 1000+ tests, all green** on a clean checkout
+(`pnpm test`).
+
+---
+
+## Reporting & UI architecture
+
+**Reporting** (`@forge/reporting`, capability `reporting`) is archetype-dependent and optional
+(P17). A product implements the `ReportTemplate` contract — turning persisted data into a
+format-neutral `ReportDocument` — and the shared pipeline renders it as **JSON, Markdown, or
+HTML**. The JWT Scanner report template is deterministic: identical persisted data always
+produces byte-identical output.
+
+**UI** (`@forge/ui`) provides structural primitives (Button, Card, Table, Dialog, badges,
+layouts, chart containers) plus the **theme token system** (P13). Products define their visual
+identity with tokens (`src/theme/tokens.ts` → CSS custom properties); the UI package never
+hard-codes a product's colors, imports business logic, or queries the database.
+
+---
+
+## Product creation
 
 ```bash
 pnpm create-product my-analyzer --archetype analyzer --capabilities reporting
 ```
 
-This scaffolds a complete Next.js product in `apps/my-analyzer/` with:
-- Analyzer engine contract in `src/domain/engine.ts`
-- Example Server Action in `src/features/analysis/actions.ts`
-- Drizzle schema for product data
-- Dockerfile + docker-compose.yml
-- 11 required documentation stubs
-- Playwright E2E test skeleton
+Scaffolds a complete, valid product skeleton at `apps/my-analyzer/`:
+Next.js app, `domain/engine.ts` implementing the archetype contract, Zod schemas, Drizzle
+schema, `providers.ts`, theme tokens, Docker files, the 10 required docs, and a Playwright
+smoke test. The skeleton passes `pnpm arch-check` and builds.
 
-Read [docs/FRAMEWORK.md](./docs/FRAMEWORK.md) for detailed walkthrough.
+**Product archetypes** (6): `analyzer` · `optimizer` · `generator` · `transformer` ·
+`middleware` (runtime) · `gateway`. Each maps to an engine contract in `@forge/domain`
+(`docs/ARCHETYPES.md`). The first product, **JWT Scanner**, validates the analyzer archetype
+end-to-end; a second archetype (generator) is planned to confirm the framework is not coupled
+to analyzer patterns (V3 §20.2).
 
-## 6 Product Archetypes
+## Product extraction
 
-1. **Analyzer** — Scans input, produces findings
-2. **Optimizer** — Measures current state, recommends improvements
-3. **Generator** — Creates new artifacts (code, config, docs)
-4. **Transformer** — Converts between formats
-5. **Runtime Middleware** — Intercepts requests, evaluates policy
-6. **Gateway** — Routes traffic, manages endpoints
+Frozen principle P15: *every product must survive extraction at any time*. The repository
+enforces extraction readiness in two ways:
 
-See [docs/ARCHETYPES.md](./docs/ARCHETYPES.md) for contracts and examples.
+- **`pnpm extract-product <source> <destination>`** — imports an existing application into the
+  Forge V3 product structure with deterministic classification of every file and dependency
+  (`SAFE` / `REVIEW` / `MANUAL`), provider isolation into a generated `providers.ts`, and a
+  machine-readable extraction report.
+- **`pnpm extraction-validate jwt-scanner`** — validates a product against the frozen
+  structure, manifest, documentation, and provider-isolation rules (delegating to
+  `arch-check` + `validate-docs`). Runs monthly in CI.
 
-## Key Rules (Machine-Enforced)
+> **Note (honest divergence):** the frozen spec (V3 §16) describes `extract-product` as an
+> *export* tool that produces a standalone acquirable repository. The implemented tool is an
+> *import/classification* tool (matching `.ai/boundaries.md`), and the standalone-repo export
+> path is exercised through `extraction-validate` + the product's `docs/ACQUISITION.md`
+> workflow rather than an automated export CLI. See the final Task 014 report for details.
 
-✓ **Domain purity** — `src/domain/` has zero infrastructure imports  
-✓ **Vendor isolation** — Each vendor SDK appears in exactly one adapter  
-✓ **Port/adapter separation** — Ports define; adapters implement; only `providers.ts` imports adapters  
-✓ **Product isolation** — No cross-product imports  
-✓ **Data extractability** — Every product must survive extraction at any time  
-✓ **No speculative abstraction** — Require two uses before extracting to packages/  
+---
 
-See [.ai/boundaries.md](.\.ai\boundaries.md) for the complete dependency graph.
-
-## Extracting a Product
-
-When ready to acquire a product:
+## Development workflow
 
 ```bash
-pnpm extract-product my-analyzer
+# 1. Install & build once (or after pulling)
+pnpm install && pnpm build
+
+# 2. Iterate on a product (no credentials needed)
+cd apps/jwt-scanner
+AUTH_MODE=test BILLING_MODE=test DATA_MODE=memory pnpm dev
+
+# 3. Validate before committing
+pnpm lint && pnpm typecheck && pnpm test && pnpm arch-check && pnpm validate-docs
 ```
 
-Produces a standalone repo with:
-- Extracted source code
-- Isolated database schema
-- Docker Compose file
-- Independent package.json and migrations
+The pre-commit hook (`pnpm arch-check`) runs automatically. Git hooks are configured by
+`pnpm install` (`prepare` script → `pnpm setup-hooks`).
 
-The extracted product is immediately deployable without modifying a single line of code.
+## Validation commands
 
-## Framework Status
+| Command | Purpose |
+|---|---|
+| `pnpm install` | workspace install (pnpm 11.21.0 via `packageManager`) |
+| `pnpm build` | compile all packages + products |
+| `pnpm arch-check` | frozen architecture enforcement |
+| `pnpm validate-docs` | documentation gate |
+| `pnpm lint` | ESLint + boundary rules |
+| `pnpm typecheck` | strict TypeScript |
+| `pnpm test` | full unit + conformance + integration suite |
+| `pnpm audit` (or `pnpm audit --audit-level=high`) | dependency vulnerability scan |
+| `pnpm create-product …` | scaffold a product |
+| `pnpm extract-product …` | import an existing app into Forge structure |
+| `pnpm extraction-validate <product>` | validate extraction readiness |
 
-**Bootstrap Phase (COMPLETE)**
-- Repository structure initialized
-- Root configuration (pnpm, Turborepo, TypeScript)
-- AI governance rules and boundaries
-- Documentation framework
+## Manual testing reference
 
-**Phase 2+ (PLANNED)**
-- Implement framework packages (`db`, `auth`, `billing`, etc.)
-- Build product scaffolding tool (`create-product`)
-- Create first production SaaS product
-- Establish conformance testing framework
-- Deploy remaining 19 products
+The complete, step-by-step manual test guide for **Windows + VS Code** — prerequisites,
+database setup, migrations, running the app, auth/tenant setup, the full product workflow,
+provider swap demonstration, all validation commands, a 20-row test matrix, and
+troubleshooting — lives in **[docs/MANUAL_TESTING.md](docs/MANUAL_TESTING.md)**.
+
+---
+
+## Current framework status
+
+| Area | Status |
+|---|---|
+| Framework packages (shared, config, domain, db, ui, reporting, testing) | ✅ implemented & tested |
+| Port packages (auth, billing, email, analytics, storage, jobs, ai-provider) | ✅ implemented & tested |
+| Adapters (clerk, stripe, resend, pg-boss) | ✅ implemented, conformance-tested |
+| Tooling (architecture-check, create-product, extract-product, extraction-validate, validate-docs) | ✅ implemented & tested |
+| CI/CD (ci, arch-check, extraction-validate, security-audit) | ✅ implemented |
+| First product (JWT Scanner, analyzer) | ✅ implemented (Task 013), integrated & smoke-tested (Task 014) |
+| Dependency security | ✅ `pnpm audit` — zero known vulnerabilities |
+| Framework documentation + manual testing guide | ✅ Task 014 |
+| Browser E2E / live-provider / real-Postgres verification | ⏳ manual — Task 015 (see `docs/MANUAL_TESTING.md`) |
 
 ## License
 
-Proprietary — All rights reserved
-
+Proprietary — all rights reserved.

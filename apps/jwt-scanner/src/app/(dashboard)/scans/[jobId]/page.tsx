@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function ScanResultsPage({
   params,
 }: {
-  readonly params: { readonly jobId: string };
+  readonly params: Promise<{ readonly jobId: string }>;
 }) {
   const context = await getOrgUserContext(authPort, ensurePlatformOrganization);
   if (!context.ok) {
@@ -29,6 +29,7 @@ export default async function ScanResultsPage({
       <EmptyState title="Not available" description={context.error} />
     );
   }
+  const { jobId } = await params;
 
   const results = await getScanResults(
     {
@@ -36,7 +37,7 @@ export default async function ScanResultsPage({
       persistence: getScanPersistence(),
       engine: new ProductEngine(),
     },
-    params.jobId,
+    jobId,
   );
 
   if (!results.ok) {

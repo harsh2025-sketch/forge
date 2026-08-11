@@ -1,7 +1,7 @@
 {
   "name": "@forge/create-product",
   "version": "0.0.1",
-  "description": "Forge V3 product scaffolding tool — generates a validated product skeleton under apps/<product-id>/",
+  "description": "Forge V3 product scaffolding tool \u2014 generates a validated product skeleton under apps/<product-id>/",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -29,6 +29,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

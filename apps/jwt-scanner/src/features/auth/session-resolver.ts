@@ -41,7 +41,7 @@ export function createCookieSessionResolver(
   const cookieName = options.sessionCookieName ?? "__session";
   return {
     async getCurrentUserId() {
-      const store = cookies();
+      const store = await cookies();
       const token = store.get(cookieName)?.value;
       if (token === undefined || token === "") {
         return null;

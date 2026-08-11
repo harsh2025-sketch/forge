@@ -5,15 +5,23 @@
 JWT Scanner is a self-contained application that can be deployed to any Node.js
 runtime: a container platform, a VM, or a serverless Node host. No cloud provider is
 mandatory (frozen principle P16). The deployment is defined by the product's
-`package.json` scripts and, once added during implementation, its `Dockerfile` and
-`docker-compose.yml`.
+`package.json` scripts and its `Dockerfile` and `docker-compose.yml` (added in
+Task 014).
 
 ## Docker
 
-During product implementation this product gains a `Dockerfile` for the web process
-and, because the product does not require a worker process, the worker artifacts as declared in the
-manifest. Containers must run as a non-root user, respect environment variables for
-secrets, expose a health check endpoint, and shut down gracefully on SIGTERM.
+The product ships a `Dockerfile` for the web process and a `docker-compose.yml`
+(starting PostgreSQL 16 plus the web process in deterministic test mode). Because
+`requiresWorker` is `false` in `product.manifest.ts`, there is no worker process
+and no `Dockerfile.worker`. The container runs as the non-root `node` user,
+respects environment variables for secrets, exposes the health check endpoint
+(`GET /api/health`), and shuts down gracefully on SIGTERM.
+
+```bash
+# From the repository root:
+docker compose -f apps/jwt-scanner/docker-compose.yml up --build
+curl http://localhost:3000/api/health
+```
 
 ## Environment
 

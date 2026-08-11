@@ -1,0 +1,16 @@
+# Keep the Docker build context (repository root) small and free of secrets.
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+coverage
+playwright-report
+test-results
+pnpm-debug.log*
