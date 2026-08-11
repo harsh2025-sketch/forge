@@ -1,0 +1,34 @@
+{
+  "name": "@forge/create-product",
+  "version": "0.0.1",
+  "description": "Forge V3 product scaffolding tool — generates a validated product skeleton under apps/<product-id>/",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "forge-create-product": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "pnpm build && vitest run",
+    "check": "node dist/cli.js --root ../.."
+  },
+  "dependencies": {
+    "@forge/config": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "vitest": "^1.0.0"
+  }
+}

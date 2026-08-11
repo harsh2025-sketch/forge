@@ -12,7 +12,10 @@
   "scripts": {
     "arch-check": "pnpm --filter @forge/architecture-check build && pnpm --filter @forge/architecture-check check",
     "build": "turbo run build",
+    "create-product": "pnpm --filter @forge/create-product build && pnpm --filter @forge/create-product check",
     "dev": "turbo run dev",
+    "extract-product": "pnpm --filter @forge/extract-product build && pnpm --filter @forge/extract-product check",
+    "extraction-validate": "pnpm --filter @forge/extraction-validate build && pnpm --filter @forge/extraction-validate check",
     "lint": "turbo run lint",
     "prepare": "pnpm setup-hooks",
     "setup-hooks": "git config core.hooksPath .githooks",

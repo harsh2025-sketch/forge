@@ -304,6 +304,29 @@ describe("invalid frozen V3 dependency relationships", () => {
     expect(rules(root)).toContain("UNDECLARED_WORKSPACE_IMPORT");
   });
 
+  it("allows a tool to depend on another developer tool (Task 010 delegation contract)", () => {
+    const root = createRepository();
+    addPackage(root, "tools/architecture-check", "@forge/architecture-check");
+    addPackage(root, "tools/extraction-validate", "@forge/extraction-validate", {
+      dependencies: workspace("@forge/architecture-check"),
+      source: 'import { checkRepository } from "@forge/architecture-check";\nexport const check = checkRepository;\n',
+    });
+    const toolErrors = checkRepository({ root }).errors.filter(
+      (error) => error.rule === "TOOL_IMPORT_DIRECTION",
+    );
+    expect(toolErrors).toEqual([]);
+  });
+
+  it("still rejects application and package imports of tools", () => {
+    const root = createRepository();
+    addPackage(root, "tools/architecture-check", "@forge/architecture-check");
+    addPackage(root, "packages/config", "@forge/config", {
+      dependencies: workspace("@forge/architecture-check"),
+      source: 'import type {} from "@forge/architecture-check";\n',
+    });
+    expect(rules(root)).toContain("TOOL_IMPORT_DIRECTION");
+  });
+
   it("requires every adapter to declare its own port and shared at runtime", () => {
     const root = createRepository();
     addPackage(root, "packages/adapters/stripe", "@forge/adapter-stripe");

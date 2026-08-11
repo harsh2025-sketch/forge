@@ -273,6 +273,11 @@ function relationDiagnostic(
   }
 
   if (target.kind === "tool") {
+    // Tools are developer utilities. Task 010's frozen contract explicitly
+    // allows tooling to depend on architecture/document validation tooling
+    // (extraction-validate delegates to arch-check and validate-docs), so a
+    // tool may compose another tool. Applications and packages still may not.
+    if (source.kind === "tool") return undefined;
     return {
       rule: "TOOL_IMPORT_DIRECTION",
       message: `${source.relativePath} may not depend on development tool ${target.relativePath}.`,

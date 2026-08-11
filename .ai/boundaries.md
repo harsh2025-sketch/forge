@@ -380,6 +380,27 @@ Then import from providers: `import { authPort } from "@/providers";`
 - TypeScript compiler API
 - ESLint
 
+## tools/extract-product
+
+**Purpose:** Import an existing application into the Forge V3 product structure (never imported by apps).
+**Allowed to import:**
+- packages/shared, packages/config
+- tools/create-product (product templates)
+- TypeScript compiler API
+- Node.js stdlib
+
+## tools/extraction-validate
+
+**Purpose:** Validation gate for generated/extracted products (never imported by apps).
+**Allowed to import:**
+- packages/shared, packages/config
+- tools/architecture-check (delegated architecture enforcement)
+- tools/validate-docs (delegated documentation validation)
+- tools/extract-product (extraction model and report schema)
+- tools/create-product (manifest and template contracts)
+- TypeScript compiler API
+- Node.js stdlib
+
 ---
 
 ## Summary of Enforcement
