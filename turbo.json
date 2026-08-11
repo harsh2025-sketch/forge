@@ -7,11 +7,13 @@
     },
     "typecheck": {
       "outputs": [],
-      "cache": true
+      "cache": true,
+      "dependsOn": ["^build"]
     },
     "test": {
       "outputs": ["coverage"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["^build"]
     },
     "build": {
       "outputs": ["dist", "build"],

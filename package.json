@@ -10,11 +10,15 @@
   },
   "packageManager": "pnpm@11.21.0",
   "scripts": {
+    "arch-check": "pnpm --filter @forge/architecture-check build && pnpm --filter @forge/architecture-check check",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "prepare": "pnpm setup-hooks",
+    "setup-hooks": "git config core.hooksPath .githooks",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "validate-docs": "pnpm --filter @forge/validate-docs build && pnpm --filter @forge/validate-docs check"
   },
   "keywords": [
     "saas",

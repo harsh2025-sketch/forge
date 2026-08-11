@@ -5,3 +5,7 @@ packages:
   - "tools/*"
 allowBuilds:
   esbuild: false
+minimumReleaseAgeExclude:
+  - bare-url@2.5.2
+  - resend@6.19.0
+  - stripe@22.5.0

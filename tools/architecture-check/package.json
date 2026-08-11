@@ -1,0 +1,24 @@
+{
+  "name": "@forge/architecture-check",
+  "version": "0.0.1",
+  "description": "Deterministic Forge V3 repository architecture validator",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "forge-architecture-check": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "pnpm build && vitest run",
+    "check": "node dist/cli.js --root ../.."
+  },
+  "dependencies": {
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "vitest": "^1.0.0"
+  }
+}
