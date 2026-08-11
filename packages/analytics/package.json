@@ -1,7 +1,7 @@
 {
   "name": "@forge/analytics",
   "version": "0.0.1",
-  "description": "Forge analytics ports — provider-neutral AnalyticsPort and FeatureFlagPort contracts (no vendor SDK)",
+  "description": "Forge analytics ports \u2014 provider-neutral AnalyticsPort and FeatureFlagPort contracts (no vendor SDK)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

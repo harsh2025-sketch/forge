@@ -1,7 +1,7 @@
 {
   "name": "@forge/reporting",
   "version": "0.0.1",
-  "description": "Forge reporting subsystem — ReportTemplate contract, deterministic JSON/Markdown/HTML generators and an optional Puppeteer PDF wrapper (V3 Day 8, §3.2, §20.2)",
+  "description": "Forge reporting subsystem \u2014 ReportTemplate contract, deterministic JSON/Markdown/HTML generators and an optional Puppeteer PDF wrapper (V3 Day 8, \u00a73.2, \u00a720.2)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,6 +27,6 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

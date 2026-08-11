@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <!-- Forge V3 architecture overview — static diagram, GitHub-compatible -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b93a7"/>
+    </marker>
+    <marker id="arrowBrand" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f472b6"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="720" rx="14" fill="#0b1020"/>
+  <rect x="0" y="0" width="960" height="720" rx="14" fill="none" stroke="#232b45" stroke-width="2"/>
+
+  <!-- Title -->
+  <text x="480" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#f3f4f8">Forge V3 — One Framework, Portable Products</text>
+  <text x="480" y="62" text-anchor="middle" font-size="12" fill="#8b93a7">Product → providers.ts → Ports → Adapters → Vendor SDKs · Domain, DB, Reporting and UI stay provider-neutral</text>
+
+  <!-- ===================== PRODUCT ===================== -->
+  <rect x="330" y="86" width="300" height="52" rx="8" fill="#1b2440" stroke="#f472b6" stroke-width="1.5"/>
+  <text x="480" y="107" text-anchor="middle" font-size="13" font-weight="600" fill="#f9a8d4">apps/jwt-scanner</text>
+  <text x="480" y="124" text-anchor="middle" font-size="10.5" fill="#a7aec2">Next.js App Router product (self-contained)</text>
+
+  <!-- Product internals row -->
+  <rect x="30" y="86" width="270" height="52" rx="8" fill="#141a30" stroke="#39415e" stroke-width="1"/>
+  <text x="165" y="106" text-anchor="middle" font-size="11" font-weight="600" fill="#cdd3e1">domain/ · features/ · db/ · ui/ · theme/</text>
+  <text x="165" y="122" text-anchor="middle" font-size="9.5" fill="#7d8597">pure logic · server actions · schema · primitives · tokens</text>
+
+  <!-- Arrow: product internals -> product -->
+  <line x1="300" y1="112" x2="326" y2="112" stroke="#39415e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ===================== providers.ts ===================== -->
+  <rect x="330" y="168" width="300" height="46" rx="8" fill="#2a1f3d" stroke="#c084fc" stroke-width="1.5"/>
+  <text x="480" y="187" text-anchor="middle" font-size="12" font-weight="600" fill="#d8b4fe">src/providers.ts — composition root</text>
+  <text x="480" y="202" text-anchor="middle" font-size="9.5" fill="#a78bfa">the only file allowed to import adapters (machine-enforced)</text>
+
+  <line x1="480" y1="138" x2="480" y2="164" stroke="#f472b6" stroke-width="1.5" marker-end="url(#arrowBrand)"/>
+
+  <!-- ===================== DOMAIN / REPORTING / UI / DB lanes ===================== -->
+  <!-- Domain -->
+  <rect x="30" y="168" width="270" height="46" rx="8" fill="#141a30" stroke="#39415e" stroke-width="1"/>
+  <text x="165" y="187" text-anchor="middle" font-size="11" font-weight="600" fill="#cdd3e1">src/domain — pure engine (Analyzer contract)</text>
+  <text x="165" y="202" text-anchor="middle" font-size="9.5" fill="#7d8597">zero infra imports · Zod-validated · returns Result</text>
+  <line x1="304" y1="191" x2="326" y2="191" stroke="#39415e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Reporting -->
+  <rect x="30" y="244" width="270" height="46" rx="8" fill="#141a30" stroke="#39415e" stroke-width="1"/>
+  <text x="165" y="263" text-anchor="middle" font-size="11" font-weight="600" fill="#cdd3e1">@forge/reporting — templates + generators</text>
+  <text x="165" y="278" text-anchor="middle" font-size="9.5" fill="#7d8597">one ReportDocument → JSON · Markdown · HTML</text>
+  <line x1="304" y1="267" x2="326" y2="267" stroke="#39415e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- UI -->
+  <rect x="30" y="320" width="270" height="46" rx="8" fill="#141a30" stroke="#39415e" stroke-width="1"/>
+  <text x="165" y="339" text-anchor="middle" font-size="11" font-weight="600" fill="#cdd3e1">@forge/ui — primitives · layouts · theme tokens</text>
+  <text x="165" y="354" text-anchor="middle" font-size="9.5" fill="#7d8597">no business logic · no DB · no ports</text>
+  <line x1="304" y1="343" x2="326" y2="343" stroke="#39415e" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- DB -->
+  <rect x="30" y="396" width="270" height="46" rx="8" fill="#12241c" stroke="#34d399" stroke-width="1"/>
+  <text x="165" y="415" text-anchor="middle" font-size="11" font-weight="600" fill="#6ee7b7">PostgreSQL — Drizzle · named product schema</text>
+  <text x="165" y="430" text-anchor="middle" font-size="9.5" fill="#5fa889">not a swappable provider (P7) · withOrg() tenant scope</text>
+  <line x1="304" y1="419" x2="326" y2="419" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ===================== PORTS column ===================== -->
+  <text x="420" y="252" text-anchor="middle" font-size="11" font-weight="700" fill="#c084fc">PORTS — provider-neutral contracts</text>
+
+  <rect x="300" y="268" width="240" height="30" rx="6" fill="#1b2440" stroke="#39415e" stroke-width="1"/>
+  <text x="420" y="288" text-anchor="middle" font-size="10.5" fill="#cdd3e1">@forge/auth · @forge/billing · @forge/email</text>
+
+  <rect x="300" y="306" width="240" height="30" rx="6" fill="#1b2440" stroke="#39415e" stroke-width="1"/>
+  <text x="420" y="326" text-anchor="middle" font-size="10.5" fill="#cdd3e1">@forge/analytics · @forge/storage · @forge/jobs</text>
+
+  <rect x="300" y="344" width="240" height="30" rx="6" fill="#1b2440" stroke="#39415e" stroke-width="1"/>
+  <text x="420" y="364" text-anchor="middle" font-size="10.5" fill="#cdd3e1">@forge/ai-provider · @forge/shared · @forge/config</text>
+
+  <line x1="420" y1="214" x2="420" y2="264" stroke="#8b93a7" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+  <!-- ===================== ADAPTERS column ===================== -->
+  <text x="690" y="252" text-anchor="middle" font-size="11" font-weight="700" fill="#38bdf8">ADAPTERS — one per vendor (P5)</text>
+
+  <rect x="590" y="268" width="200" height="30" rx="6" fill="#14263a" stroke="#38bdf8" stroke-width="1"/>
+  <text x="690" y="288" text-anchor="middle" font-size="10.5" fill="#bae6fd">@forge/adapter-clerk → @clerk/backend</text>
+
+  <rect x="590" y="306" width="200" height="30" rx="6" fill="#14263a" stroke="#38bdf8" stroke-width="1"/>
+  <text x="690" y="326" text-anchor="middle" font-size="10.5" fill="#bae6fd">@forge/adapter-stripe → stripe</text>
+
+  <rect x="590" y="344" width="200" height="30" rx="6" fill="#14263a" stroke="#38bdf8" stroke-width="1"/>
+  <text x="690" y="364" text-anchor="middle" font-size="10.5" fill="#bae6fd">@forge/adapter-resend → resend</text>
+
+  <rect x="590" y="382" width="200" height="30" rx="6" fill="#14263a" stroke="#38bdf8" stroke-width="1"/>
+  <text x="690" y="402" text-anchor="middle" font-size="10.5" fill="#bae6fd">@forge/adapter-pg-boss → pg-boss</text>
+
+  <line x1="544" y1="283" x2="586" y2="283" stroke="#38bdf8" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="544" y1="321" x2="586" y2="321" stroke="#38bdf8" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="544" y1="359" x2="586" y2="359" stroke="#38bdf8" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="544" y1="397" x2="586" y2="397" stroke="#38bdf8" stroke-width="1.4" marker-end="url(#arrow)"/>
+
+  <text x="690" y="436" text-anchor="middle" font-size="9.5" fill="#7d8597">swap = new adapter passing the port's conformance suite</text>
+  <text x="690" y="451" text-anchor="middle" font-size="9.5" fill="#7d8597">+ one providers.ts change · zero domain changes</text>
+
+  <!-- ===================== TOOLS / ENFORCEMENT ===================== -->
+  <rect x="330" y="500" width="300" height="120" rx="8" fill="#1b2440" stroke="#f59e0b" stroke-width="1"/>
+  <text x="480" y="522" text-anchor="middle" font-size="12" font-weight="600" fill="#fcd34d">Machine-enforced boundaries</text>
+  <text x="480" y="542" text-anchor="middle" font-size="10" fill="#cdd3e1">pnpm arch-check — 30+ rule families</text>
+  <text x="480" y="558" text-anchor="middle" font-size="10" fill="#cdd3e1">pnpm lint — ESLint boundaries</text>
+  <text x="480" y="574" text-anchor="middle" font-size="10" fill="#cdd3e1">pnpm typecheck — TS project references</text>
+  <text x="480" y="590" text-anchor="middle" font-size="10" fill="#cdd3e1">pnpm test — unit + conformance suites</text>
+  <text x="480" y="606" text-anchor="middle" font-size="10" fill="#cdd3e1">pnpm validate-docs — documentation gate</text>
+  <text x="480" y="622" text-anchor="middle" font-size="9.5" fill="#7d8597">GitHub Actions: ci · arch-check · extraction-validate · security-audit</text>
+
+  <!-- Footer -->
+  <text x="480" y="682" text-anchor="middle" font-size="10" fill="#8b93a7">Tools: create-product · extract-product (import) · extraction-validate · validate-docs · architecture-check</text>
+  <text x="480" y="700" text-anchor="middle" font-size="9.5" fill="#5c6475">Frozen principles: P1–P22 · docs/architecture/FORGE-MASTER-ARCHITECTURE-V3.md</text>
+</svg>

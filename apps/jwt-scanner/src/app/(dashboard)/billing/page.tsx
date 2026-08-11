@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export default async function BillingPage({
   searchParams,
 }: {
-  readonly searchParams: { readonly checkout?: string };
+  readonly searchParams: Promise<{ readonly checkout?: string }>;
 }) {
   const context = await getOrgUserContext(authPort, ensurePlatformOrganization);
   if (!context.ok) {
@@ -36,16 +36,17 @@ export default async function BillingPage({
   });
 
   const currentPlanId = status.ok ? status.value.planId : null;
+  const params = await searchParams;
 
   return (
     <div>
       <h1 style={{ marginTop: 0 }}>Billing</h1>
 
-      {searchParams.checkout !== undefined && (
+      {params.checkout !== undefined && (
         <Card>
           <StatusBadge
-            status={searchParams.checkout === "success" ? "Checkout completed" : "Checkout cancelled"}
-            tone={searchParams.checkout === "success" ? "success" : "warning"}
+            status={params.checkout === "success" ? "Checkout completed" : "Checkout cancelled"}
+            tone={params.checkout === "success" ? "success" : "warning"}
           />
         </Card>
       )}

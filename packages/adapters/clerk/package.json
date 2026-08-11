@@ -1,7 +1,7 @@
 {
   "name": "@forge/adapter-clerk",
   "version": "0.0.1",
-  "description": "Forge Clerk adapter — AuthPort, AuthMiddleware and AuthWebhookHandler implementations over the Clerk backend SDK (V3 Day 5, P5, P12)",
+  "description": "Forge Clerk adapter \u2014 AuthPort, AuthMiddleware and AuthWebhookHandler implementations over the Clerk backend SDK (V3 Day 5, P5, P12)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,6 +27,6 @@
   "devDependencies": {
     "@forge/testing": "workspace:*",
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

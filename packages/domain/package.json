@@ -1,7 +1,7 @@
 {
   "name": "@forge/domain",
   "version": "0.0.1",
-  "description": "Forge Master SaaS Framework shared domain primitives and archetype contracts — provider-neutral, pure, zero infrastructure imports",
+  "description": "Forge Master SaaS Framework shared domain primitives and archetype contracts \u2014 provider-neutral, pure, zero infrastructure imports",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

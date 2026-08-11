@@ -1,7 +1,7 @@
 {
   "name": "@forge/testing",
   "version": "0.0.1",
-  "description": "Forge test infrastructure — port conformance suites, behavioral mock adapters and deterministic test data factories (V3 §3.2, §12.4, P12)",
+  "description": "Forge test infrastructure \u2014 port conformance suites, behavioral mock adapters and deterministic test data factories (V3 \u00a73.2, \u00a712.4, P12)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,7 +27,7 @@
     "@forge/jobs": "workspace:*",
     "@forge/shared": "workspace:*",
     "@forge/storage": "workspace:*",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

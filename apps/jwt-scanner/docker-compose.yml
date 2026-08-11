@@ -1,0 +1,52 @@
+# JWT Scanner — local full-stack environment (frozen principle P16,
+# V3 §13.2 "docker compose up starts the full local stack").
+#
+# Starts PostgreSQL 16 plus the web process. The web process runs in
+# deterministic test mode (AUTH_MODE=test / BILLING_MODE=test) against the
+# compose-managed database (DATA_MODE=postgres), applying migrations on
+# startup. Live-mode credentials (CLERK_SECRET_KEY, STRIPE_SECRET_KEY) are
+# documented in docs/SETUP.md; pass them as environment variables if you want
+# live providers.
+#
+# Usage (from the repository root):
+#   docker compose -f apps/jwt-scanner/docker-compose.yml up --build
+#   curl http://localhost:3000/api/health
+#   docker compose -f apps/jwt-scanner/docker-compose.yml down
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: forge
+      POSTGRES_DB: forge
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forge -d forge"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/jwt-scanner/Dockerfile
+    environment:
+      DATABASE_URL: postgres://forge:forge@db:5432/forge
+      AUTH_MODE: test
+      BILLING_MODE: test
+      DATA_MODE: postgres
+      APP_URL: http://localhost:3000
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "pnpm db:migrate && pnpm start"
+
+volumes:
+  pgdata:

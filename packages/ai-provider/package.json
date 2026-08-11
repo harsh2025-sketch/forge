@@ -1,7 +1,7 @@
 {
   "name": "@forge/ai-provider",
   "version": "0.0.1",
-  "description": "Forge AI model port — provider-neutral AIModelPort contract (no vendor SDK)",
+  "description": "Forge AI model port \u2014 provider-neutral AIModelPort contract (no vendor SDK)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,6 +23,6 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.6"
   }
 }

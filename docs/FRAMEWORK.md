@@ -353,7 +353,9 @@ The extracted product is **immediately deployable** with zero code changes.
 
 ## Next Steps
 
-- **[Getting Started](./GETTING-STARTED.md)** — Build your first product
+- **[Manual Testing Guide](./MANUAL_TESTING.md)** — Step-by-step Windows/VS Code walkthrough
 - **[Archetypes](./ARCHETYPES.md)** — Understand product types
-- **[Provider Replacement](./PROVIDER-REPLACEMENT.md)** — Swap a provider
-- **[Acquisition Guide](./ACQUISITION-GUIDE.md)** — Extract a product
+- **[Frozen Architecture](./architecture/FORGE-MASTER-ARCHITECTURE-V3.md)** — The V3 specification
+- **[Import Boundaries](../.ai/boundaries.md)** — The machine-enforced dependency graph
+- **[Product Docs](./../apps/jwt-scanner/docs/)** — JWT Scanner's ten required documents
+  (SETUP, PROVIDERS, ACQUISITION, …)
