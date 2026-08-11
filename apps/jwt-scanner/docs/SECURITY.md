@@ -23,6 +23,24 @@ uses `withOrg()` from `@forge/db` so that a user can never read or mutate anothe
 organization's records (IDOR prevention). Server Actions re-check authorization after
 validating input; authorization is never inferred from the URL.
 
+## JWT analysis boundary
+
+The domain parser accepts at most 64 KiB and requires exactly three compact JWT
+segments. Header and payload are decoded as canonical, unpadded base64url,
+rejected if they are not valid UTF-8 JSON, and validated with the product Zod
+schemas. An empty signature segment is accepted for the `alg=none` static check;
+the evidence records whether a signature segment was present. Duplicate JSON
+members follow deterministic ECMAScript parsing semantics, where the last member
+is retained.
+
+Analysis is deliberately non-executing and non-cryptographic. It never follows
+`jku`, `x5u`, or other URLs, resolves keys, reads credentials, verifies or mutates
+a token, tests a secret, or claims that exploitation succeeded. A weak-HMAC
+finding requires explicit caller-supplied key-size metadata and states that no
+secret was recovered. Algorithm confusion is an observed mismatch against an
+explicit caller-supplied allow-list. Expiration is evaluated only against the
+required caller-supplied NumericDate, never the host clock.
+
 ## Threat mitigations
 
 - CSRF: state-changing actions require CSRF protection; webhooks verify provider

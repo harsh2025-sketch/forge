@@ -14,12 +14,16 @@ ports, and every boundary is machine-enforced by `pnpm arch-check` and
 The product's domain lives in `src/domain/` and contains:
 
 - `engine.ts` — implements the analyzer archetype contract from `@forge/domain`
+  and constructs findings and summaries in frozen taxonomy order
+- `parser.ts` — strictly decodes base64url UTF-8 JSON and validates decoded
+  header and payload objects without performing signature verification
 - `types.ts` — product-specific domain types (finding taxonomy `none_alg`,
   `weak_hmac`, `alg_confusion`, `expired_claim`; JWT header/payload/evidence
   shapes)
 - `schemas.ts` — Zod schemas for every external input (compact-JWT token,
-  scan config, finding category)
-- `__tests__/` — unit tests for the engine, schemas, and types
+  explicit evaluation time, algorithm policy, optional HMAC key-size metadata,
+  and finding category)
+- `__tests__/` — unit tests for the parser, engine, schemas, and types
 
 Domain code may import only `@forge/shared`, `@forge/domain`, Zod, and local files.
 It never imports Next.js, React, database packages, adapters, or vendor SDKs.
@@ -41,11 +45,29 @@ through `src/db/migrate.ts` (V3 §6.5). See `docs/DATABASE.md`.
 
 ## Engine contract
 
-The engine implements the analyzer contract (V3 §8.2). The skeleton validates its
-input with the Zod schemas and returns a `Result`; every product feature must call the
-engine through this contract and never bypass validation. The engine has zero side
-effects: infrastructure (queries, jobs, external calls) lives in `src/features/` or
-middleware.
+The engine implements the analyzer contract (V3 §8.2), validates input and
+configuration with the product Zod schemas, and returns a `Result`; every product
+feature must call the engine through this contract and never bypass validation.
+The deterministic pipeline is compact-format validation, strict header/payload
+decoding, schema validation, header and claim analysis, algorithm-policy analysis,
+and typed finding aggregation.
+
+`evaluationTime` is a required JWT NumericDate in whole seconds. A finite numeric
+`exp` uses `exp <= evaluationTime`, so a token is expired at the exact boundary.
+An absent or non-numeric `exp` produces no expiration finding because the frozen
+payload schema intentionally accepts open-ended claim values. The same evaluation
+value produces the summary's ISO `generatedAt`; the engine never reads the system
+clock. Optional `expectedAlgorithms` supplies the verifier's allow-list for static
+algorithm-confusion detection. Optional `hmacKeyBits` is caller-observed metadata:
+for HS256, HS384, and HS512 it is compared with the RFC 7518 minimum of 256, 384,
+and 512 bits respectively. Missing metadata never implies secret compromise.
+
+Findings are emitted in the frozen order `none_alg`, `weak_hmac`,
+`alg_confusion`, `expired_claim`, then limited by `maxFindings`. Identifiers,
+severity, descriptions, evidence, summary counts, metadata, and timestamps are
+fully determined by token plus configuration. The engine has zero infrastructure
+side effects: queries, persistence, jobs, HTTP, and provider calls belong to later
+application features, not this domain milestone.
 
 ## Dependency flow
 

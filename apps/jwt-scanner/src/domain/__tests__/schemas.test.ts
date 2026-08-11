@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COMPACT_JWT_PARTS,
+  MAX_EVALUATION_TIME,
   MAX_JWT_LENGTH,
   findingCategorySchema,
   jwtHeaderSchema,
@@ -35,10 +36,14 @@ describe("jwtTokenSchema", () => {
     }
   });
 
-  it("rejects empty segments (header.payload.signature each non-empty)", () => {
-    for (const value of [".b.c", "a..c", "a.b.", ".."]) {
+  it("rejects empty header and payload segments", () => {
+    for (const value of [".b.c", "a..c", "..", ".b."]) {
       expect(jwtTokenSchema.safeParse(value).success, JSON.stringify(value)).toBe(false);
     }
+  });
+
+  it("accepts an empty signature segment used by alg=none compact serialization", () => {
+    expect(jwtTokenSchema.safeParse("a.b.").success).toBe(true);
   });
 
   it("rejects segments outside the base64url alphabet", () => {
@@ -98,20 +103,58 @@ describe("jwtInputSchema", () => {
 });
 
 describe("jwtScanConfigSchema", () => {
-  it("applies the default maxFindings when omitted", () => {
-    const result = jwtScanConfigSchema.safeParse({});
+  const evaluationTime = 2_000_000_000;
+
+  it("requires an explicit evaluation time and applies the default maxFindings", () => {
+    expect(jwtScanConfigSchema.safeParse({}).success).toBe(false);
+    const result = jwtScanConfigSchema.safeParse({ evaluationTime });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.maxFindings).toBe(100);
   });
 
   it("accepts a positive integer maxFindings", () => {
-    expect(jwtScanConfigSchema.safeParse({ maxFindings: 1 }).success).toBe(true);
-    expect(jwtScanConfigSchema.safeParse({ maxFindings: 5000 }).success).toBe(true);
+    expect(jwtScanConfigSchema.safeParse({ evaluationTime, maxFindings: 1 }).success).toBe(true);
+    expect(jwtScanConfigSchema.safeParse({ evaluationTime, maxFindings: 5000 }).success).toBe(true);
+  });
+
+  it("accepts the supported evaluation-time boundaries", () => {
+    expect(jwtScanConfigSchema.safeParse({ evaluationTime: 0 }).success).toBe(true);
+    expect(
+      jwtScanConfigSchema.safeParse({ evaluationTime: MAX_EVALUATION_TIME }).success,
+    ).toBe(true);
+  });
+
+  it("rejects invalid evaluation times", () => {
+    for (const value of [-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, MAX_EVALUATION_TIME + 1, "0"]) {
+      expect(jwtScanConfigSchema.safeParse({ evaluationTime: value }).success).toBe(false);
+    }
   });
 
   it("rejects invalid maxFindings values", () => {
     for (const maxFindings of [0, -1, 1.5, Number.NaN, "100"]) {
-      expect(jwtScanConfigSchema.safeParse({ maxFindings }).success).toBe(false);
+      expect(jwtScanConfigSchema.safeParse({ evaluationTime, maxFindings }).success).toBe(false);
+    }
+  });
+
+  it("accepts deterministic algorithm and HMAC policy metadata", () => {
+    const result = jwtScanConfigSchema.safeParse({
+      evaluationTime,
+      expectedAlgorithms: ["RS256", "ES256"],
+      hmacKeyBits: 256,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty/duplicate algorithms, invalid key sizes, and unknown fields", () => {
+    for (const config of [
+      { evaluationTime, expectedAlgorithms: [] },
+      { evaluationTime, expectedAlgorithms: ["RS256", "RS256"] },
+      { evaluationTime, expectedAlgorithms: [""] },
+      { evaluationTime, hmacKeyBits: 0 },
+      { evaluationTime, hmacKeyBits: 1.5 },
+      { evaluationTime, extra: true },
+    ]) {
+      expect(jwtScanConfigSchema.safeParse(config).success).toBe(false);
     }
   });
 });
