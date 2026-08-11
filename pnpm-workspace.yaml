@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "packages/adapters/*"
   - "tools/*"
 allowBuilds:
   esbuild: false
