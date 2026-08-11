@@ -1,0 +1,32 @@
+{
+  "name": "@forge/reporting",
+  "version": "0.0.1",
+  "description": "Forge reporting subsystem — ReportTemplate contract, deterministic JSON/Markdown/HTML generators and an optional Puppeteer PDF wrapper (V3 Day 8, §3.2, §20.2)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@forge/domain": "workspace:*",
+    "@forge/shared": "workspace:*"
+  },
+  "optionalDependencies": {
+    "puppeteer-core": "^23.11.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
+  }
+}
