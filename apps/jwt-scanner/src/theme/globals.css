@@ -1,0 +1,70 @@
+/**
+ * JWT Scanner globals.css — CSS custom property application (V3 §10.3, P13).
+ *
+ * Generated deterministically from src/theme/tokens.ts via @forge/ui themeToCss().
+ * Do not hand-edit the variable block: change tokens.ts and regenerate (the
+ * theme test asserts this file stays in sync with tokens.ts).
+ */
+:root {
+  --forge-borders-radius: 4px;
+  --forge-borders-style: solid;
+  --forge-borders-width: 1px;
+  --forge-charts-animations: false;
+  --forge-charts-color-palette-0: hsl(0 84% 60%);
+  --forge-charts-color-palette-1: hsl(25 95% 55%);
+  --forge-charts-color-palette-2: hsl(45 93% 52%);
+  --forge-charts-color-palette-3: hsl(200 90% 48%);
+  --forge-charts-color-palette-4: hsl(215 20% 60%);
+  --forge-charts-grid-lines: false;
+  --forge-charts-style: minimal;
+  --forge-colors-brand-accent: hsl(350 84% 60%);
+  --forge-colors-brand-accent-foreground: hsl(0 0% 100%);
+  --forge-colors-brand-primary: hsl(350 84% 60%);
+  --forge-colors-brand-primary-foreground: hsl(0 0% 100%);
+  --forge-colors-brand-secondary: hsl(222 30% 18%);
+  --forge-colors-brand-secondary-foreground: hsl(210 40% 96%);
+  --forge-colors-semantic-error: hsl(0 84% 60%);
+  --forge-colors-semantic-info: hsl(217 91% 60%);
+  --forge-colors-semantic-success: hsl(142 71% 45%);
+  --forge-colors-semantic-warning: hsl(38 92% 50%);
+  --forge-colors-severity-critical: hsl(0 84% 60%);
+  --forge-colors-severity-high: hsl(25 95% 55%);
+  --forge-colors-severity-info: hsl(215 20% 60%);
+  --forge-colors-severity-low: hsl(200 90% 48%);
+  --forge-colors-severity-medium: hsl(45 93% 52%);
+  --forge-colors-surface-background: hsl(222 47% 6%);
+  --forge-colors-surface-border: hsl(217 33% 18%);
+  --forge-colors-surface-foreground: hsl(210 40% 96%);
+  --forge-colors-surface-input: hsl(217 33% 24%);
+  --forge-colors-surface-muted: hsl(217 33% 12%);
+  --forge-colors-surface-muted-foreground: hsl(215 20% 62%);
+  --forge-colors-surface-ring: hsl(350 84% 60%);
+  --forge-components-badge: pill;
+  --forge-components-badge-radius: 9999px;
+  --forge-components-button: sharp;
+  --forge-components-button-radius: 0px;
+  --forge-components-card: bordered;
+  --forge-components-card-shadow: none;
+  --forge-components-input: default;
+  --forge-components-table: striped;
+  --forge-density: compact;
+  --forge-density-row-x: 8px;
+  --forge-density-row-y: 6px;
+  --forge-icons-set: lucide;
+  --forge-navigation-sidebar-variant: default;
+  --forge-navigation-sidebar-width: 16rem;
+  --forge-navigation-style: sidebar;
+  --forge-overlay: rgb(0 0 0 / 0.55);
+  --forge-product-name: JWT Scanner;
+  --forge-product-tagline: Scan JWTs for security issues;
+  --forge-shadows: none;
+  --forge-spacing-base: 4;
+  --forge-spacing-scale: tight;
+  --forge-spacing-unit: 3px;
+  --forge-typography-font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --forge-typography-font-family-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --forge-typography-font-size: 13px;
+  --forge-typography-heading-weight: 700;
+  --forge-typography-mono-prominence: normal;
+  --forge-typography-scale: compact;
+}

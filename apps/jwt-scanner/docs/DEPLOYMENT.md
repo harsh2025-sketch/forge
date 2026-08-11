@@ -1,0 +1,42 @@
+# JWT Scanner Deployment
+
+## Deployment targets
+
+JWT Scanner is a self-contained application that can be deployed to any Node.js
+runtime: a container platform, a VM, or a serverless Node host. No cloud provider is
+mandatory (frozen principle P16). The deployment is defined by the product's
+`package.json` scripts and, once added during implementation, its `Dockerfile` and
+`docker-compose.yml`.
+
+## Docker
+
+During product implementation this product gains a `Dockerfile` for the web process
+and, because the product does not require a worker process, the worker artifacts as declared in the
+manifest. Containers must run as a non-root user, respect environment variables for
+secrets, expose a health check endpoint, and shut down gracefully on SIGTERM.
+
+## Environment
+
+Every environment needs a complete set of validated environment variables (see
+`docs/SETUP.md`). Configuration is read through `@forge/config`; startup fails fast
+when a required variable is missing. Secrets are never baked into images; they are
+injected at runtime by the deployment platform.
+
+## Release process
+
+1. Run the full quality gate: `pnpm lint`, `pnpm typecheck`, `pnpm test`,
+   `pnpm arch-check`, `pnpm validate-docs`.
+2. Build the application (`pnpm build`).
+3. Publish the container image with an immutable tag.
+4. Deploy, then verify the health endpoint and the documented smoke checks.
+
+## Rollback
+
+Keep the previous image tag available. Rollback is a redeploy of the previous tag plus
+any required database migration reversal; migrations must be backward compatible so the
+previous application version can run while data converges.
+
+## Monitoring
+
+Every deployment must report health, error rates, and latency to the operations
+tooling described in `docs/OPERATIONS.md`.

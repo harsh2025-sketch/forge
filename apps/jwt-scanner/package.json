@@ -1,0 +1,30 @@
+{
+  "name": "jwt-scanner",
+  "version": "0.0.1",
+  "description": "JWT Scanner — Forge V3 product (analyzer archetype)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:migrate": "pnpm build && node dist/db/migrate.js"
+  },
+  "dependencies": {
+    "@forge/config": "workspace:*",
+    "@forge/db": "workspace:*",
+    "@forge/domain": "workspace:*",
+    "@forge/reporting": "workspace:*",
+    "@forge/shared": "workspace:*",
+    "@forge/ui": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
+  }
+}
