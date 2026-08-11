@@ -1,0 +1,30 @@
+{
+  "name": "@forge/db",
+  "version": "0.0.1",
+  "description": "Forge database layer — Drizzle ORM + PostgreSQL platform schema, pgSchema 'platform', withOrg/withProduct helpers, migration runner (P7, P8, P20)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@forge/shared": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "postgres": "^3.4.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^1.0.0"
+  }
+}
