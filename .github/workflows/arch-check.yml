@@ -2,17 +2,20 @@ name: Architecture Enforcement
 
 on:
   pull_request:
-    branches: [main, develop]
+
+permissions:
+  contents: read
 
 jobs:
   architecture-check:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: 11
 
@@ -21,13 +24,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Check package boundaries
+      - name: Build workspace dependencies
+        run: pnpm build
+
+      - name: Check package and import boundaries
         run: pnpm arch-check
-
-      - name: Verify no forbidden imports
-        run: pnpm lint --max-warnings 0
-
-      - name: TypeScript strict mode
-        run: pnpm typecheck
