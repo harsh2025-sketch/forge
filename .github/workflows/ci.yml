@@ -15,8 +15,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
@@ -26,7 +24,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Workspace typechecks and tests resolve built package exports from dist.
+      # Workspace packages resolve internal @forge/* packages
+      # through their built dist output.
       - name: Build workspace dependencies
         run: pnpm build
 
