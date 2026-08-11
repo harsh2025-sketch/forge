@@ -3,8 +3,12 @@
 ## Test layers
 
 - Unit tests for domain logic live in `src/domain/__tests__/` and run with Vitest.
-  They cover the engine contract: valid inputs, invalid inputs, and every Result
-  branch.
+  Parser matrices cover valid compact JWTs, segment count, canonical base64url,
+  malformed UTF-8/JSON, decoded schema failures, size limits, unusual claims,
+  unexpected headers, and duplicate JSON members. Engine matrices cover all four
+  frozen categories, temporal boundaries, HMAC key-size boundaries, configured
+  algorithm mismatch, combined finding order, limits, summaries, and repeated-run
+  determinism. Every timestamp is explicit and all fixtures are in memory.
 - Integration tests for Server Actions, API routes, and webhooks live in
   `src/__tests__/integration/` and run against a test database.
 - Conformance tests from `packages/testing/conformance` prove that every wired

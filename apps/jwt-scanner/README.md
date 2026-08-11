@@ -7,8 +7,10 @@ Scan JWTs for security issues
 ## Overview
 
 JWT Scanner is the first Forge V3 product, scaffolded with `pnpm create-product`
-and implemented per the frozen framework plan (V3 §20.2 Day 11). It implements
-the analyzer archetype contract in `src/domain/engine.ts` and follows the
+and implemented per the frozen framework plan (V3 §20.2 Days 11–12). It
+implements the analyzer archetype contract in `src/domain/engine.ts`, safely
+parses compact JWTs, and deterministically reports the frozen `none_alg`,
+`weak_hmac`, `alg_confusion`, and `expired_claim` taxonomy. It follows the
 frozen Forge architecture: pure domain logic, provider isolation behind ports,
 product-scoped database schema, and machine-enforced package boundaries.
 
