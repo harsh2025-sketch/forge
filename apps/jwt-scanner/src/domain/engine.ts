@@ -18,8 +18,9 @@ import type { JwtInput, JwtScanConfig } from "./schemas.js";
 import { JWT_FINDING_CATEGORIES } from "./types.js";
 import type { FindingCategory, JwtEvidence, ProductFinding } from "./types.js";
 
-const ENGINE_NAME = "jwt-scanner-analyzer";
-const ENGINE_VERSION = "1.0.0";
+/** Engine identity — exported so reports can record which engine produced a scan. */
+export const ENGINE_NAME = "jwt-scanner-analyzer";
+export const ENGINE_VERSION = "1.0.0";
 
 /** RFC 7518 §3.2 requires an HMAC key at least as large as the hash output. */
 const HMAC_REQUIRED_KEY_BITS: Readonly<Partial<Record<string, number>>> = {

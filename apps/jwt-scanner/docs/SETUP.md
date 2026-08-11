@@ -16,8 +16,28 @@ pnpm build
 ```
 
 The product resolves its workspace dependencies (`@forge/config`, `@forge/db`,
-`@forge/domain`, `@forge/reporting`, `@forge/shared`, `@forge/ui`) through
-`pnpm-workspace.yaml`. The product itself declares no vendor SDKs.
+`@forge/domain`, `@forge/reporting`, `@forge/shared`, `@forge/ui`,
+`@forge/auth`, `@forge/billing`, `@forge/adapter-clerk`,
+`@forge/adapter-stripe`) through `pnpm-workspace.yaml`. The product declares no
+vendor SDKs directly; vendor code lives in the adapter packages.
+
+## Running the application
+
+The product is a Next.js application (App Router). Local development:
+
+```bash
+cd apps/jwt-scanner
+pnpm dev          # next dev on http://localhost:3000
+```
+
+A deterministic local/test run needs no credentials and no database:
+
+```bash
+AUTH_MODE=test BILLING_MODE=test DATA_MODE=memory pnpm dev
+```
+
+This signs in a fixed test principal (`scanner@example.test`) in one
+organization, uses the in-memory billing seam, and stores scans in memory.
 
 ## Database setup
 
@@ -33,28 +53,31 @@ Migrations are tracked in `drizzle.__drizzle_migrations`.
 
 ## Environment variables
 
-Configuration is validated through the `@forge/config` environment schema. The
-Day-11 milestone requires a single variable; the rest are activated when their
-providers are wired in later milestones:
+Configuration is validated through the `@forge/config` environment schema
+(`src/providers.ts`). Secret values are never logged.
 
 | Variable | Purpose | Required |
 | --- | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string | yes — `db:migrate` |
-| `AUTH_SECRET` / provider keys | authentication provider credentials | when auth is wired |
-| `BILLING_SECRET` | billing provider webhook secret | when billing is wired |
-| `EMAIL_API_KEY` | email provider API key | when email is wired |
-| `ANALYTICS_API_KEY` | analytics provider API key | when analytics is wired |
-| `JOB_QUEUE_CONNECTION` | job queue connection string | when the worker is enabled |
+| `DATABASE_URL` | PostgreSQL connection string | yes for `db:migrate` and `DATA_MODE=postgres` |
+| `AUTH_MODE` | `live` (default) or `test` (deterministic auth seam) | no |
+| `CLERK_SECRET_KEY` | Clerk backend secret key (live auth) | yes in live mode |
+| `AUTH_SIGN_IN_URL` | Clerk-hosted sign-in URL used by the landing CTA (live) | recommended in live mode |
+| `BILLING_MODE` | `live` (default) or `test` (in-memory billing seam) | no |
+| `STRIPE_SECRET_KEY` | Stripe secret key (live billing) | yes in live mode |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret | yes for live webhooks |
+| `DATA_MODE` | `postgres` (default) or `memory` (in-memory persistence) | no |
+| `APP_URL` | Public base URL used to build checkout success/cancel URLs | recommended in live mode |
 
 Never commit real values; `.env*` files are gitignored and only `.env.example`
-may be committed. Missing required variables cause `db:migrate` to fail fast
-with a clear message (secret values are never logged).
+may be committed. Missing required variables cause the affected operation to
+fail fast with a clear message that never includes the secret value.
 
 ## Verification
 
 ```bash
-pnpm --filter jwt-scanner test     # domain, theme, schema, migration tests
-pnpm arch-check                   # repository-wide boundary enforcement
-pnpm validate-docs                # documentation completeness
+pnpm --filter jwt-scanner test     # domain, feature, integration, component tests
+pnpm --filter jwt-scanner e2e      # Playwright critical path (test mode; see docs/TESTING.md)
+pnpm arch-check                    # repository-wide boundary enforcement
+pnpm validate-docs                 # documentation completeness
 pnpm extraction-validate jwt-scanner
 ```
