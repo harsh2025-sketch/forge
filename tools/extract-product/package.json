@@ -1,11 +1,11 @@
 {
-  "name": "@forge/validate-docs",
+  "name": "@forge/extract-product",
   "version": "0.0.1",
-  "description": "Forge V3 framework and product documentation validation",
+  "description": "Forge V3 extraction tool \u2014 imports an existing application into the Forge product structure with deterministic classification and reporting",
   "private": true,
   "type": "module",
   "bin": {
-    "forge-validate-docs": "./dist/cli.js"
+    "forge-extract-product": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -14,9 +14,13 @@
     "test": "pnpm build && vitest run",
     "check": "node dist/cli.js --root ../.."
   },
+  "dependencies": {
+    "@forge/config": "workspace:*",
+    "@forge/create-product": "workspace:*",
+    "typescript": "^5.8.3"
+  },
   "devDependencies": {
     "@types/node": "^26.2.0",
-    "typescript": "^5.8.3",
     "vitest": "^1.0.0"
   },
   "main": "./dist/index.js",
