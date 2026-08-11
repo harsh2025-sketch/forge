@@ -69,6 +69,39 @@ fully determined by token plus configuration. The engine has zero infrastructure
 side effects: queries, persistence, jobs, HTTP, and provider calls belong to later
 application features, not this domain milestone.
 
+## Feature layer
+
+`src/features/` holds the product feature modules (V3 §20.2 Day 13):
+
+- `scans/` — scan submission, results, finding detail and report export.
+  `service.ts` is the testable core (validation → authorization → engine →
+  persistence → result); `actions.ts` is the thin Next.js server-action
+  boundary; `persistence.ts` defines the product-local persistence seam with a
+  Drizzle/PostgreSQL implementation (`drizzle-persistence.ts`) and a
+  deterministic in-memory implementation (`memory-persistence.ts`) used by
+  tests and `DATA_MODE=memory` runs. `report.ts` implements the
+  `@forge/reporting` `ReportTemplate` contract — all export formats are
+  rendered by the shared reporting pipeline.
+- `billing/` — provider-neutral plans (`plans.ts`, mirrored in
+  `product.manifest.ts`), checkout / portal / status flow through the
+  `BillingPort`, and the `platform.subscriptions` projection
+  (`subscription-persistence.ts`).
+- `auth/` — org-scoped session resolution (`session.ts`), the request-bound
+  Clerk session resolver (`session-resolver.ts`), and deterministic platform
+  identity sync (`identity.ts`).
+
+`src/components/` contains presentational components composed from `@forge/ui`
+primitives (landing page, scan form, results view, finding detail, report
+export links, billing plans, dashboard navigation). Components receive data
+and callbacks via props; server actions and pages own the wiring.
+
+`src/app/` is the Next.js App Router surface: the public landing page
+(`/`), the protected dashboard (`/scanner`, `/scans/[jobId]`,
+`/scans/[jobId]/findings/[findingId]`, `/billing`), the report export route
+(`/scans/[jobId]/export`) and the billing webhook (`/api/webhooks/billing`).
+The dashboard layout enforces authentication (redirect to `/` with an
+`auth=required` hint) and resolves the organization context.
+
 ## Dependency flow
 
 Application code depends on Forge ports (auth, billing, email, analytics, jobs,
@@ -78,11 +111,18 @@ is:
 
 application/domain code → Forge ports → providers.ts → adapter → vendor SDK
 
+`src/providers.ts` is the composition root: it wires the Clerk AuthPort, the
+Stripe BillingPort and webhook handler, and the persistence implementations,
+and it selects the deterministic dev-mode seams when `AUTH_MODE=test`,
+`BILLING_MODE=test`, or `DATA_MODE=memory` are set (see docs/PROVIDERS.md).
+
 ## Capabilities
 
 The manifest declares the capabilities this product composes: `reporting`. Each
 capability maps to a Forge subsystem (reporting) that is wired through
-`src/providers.ts` when implemented.
+`src/providers.ts` when implemented. The manifest also declares the product's
+billing plans (`free`, `pro`) with provider-neutral `priceId` identifiers
+(P21) — pricing values are a human decision (V3 §22.2).
 
 ## Worker process
 

@@ -51,10 +51,14 @@ never edited after they have been applied.
 
 ## Access paths
 
-Application code queries the database through `src/features/*/queries.ts`
-modules, never from domain code. Domain logic receives plain data and returns
-`Result` values; the database is an implementation detail of the feature layer.
-The feature layer is implemented in a later milestone (V3 §20.2 Day 13).
+Application code queries the database through the feature layer
+(`src/features/scans/drizzle-persistence.ts`,
+`src/features/billing/drizzle-subscription-persistence.ts`), never from domain
+code. Domain logic receives plain data and returns `Result` values; the
+database is an implementation detail of the feature layer (V3 §20.2 Day 13).
+Every tenant-scoped query uses the `withOrg()` scoping helper, and the same
+contract is enforced by the deterministic in-memory implementations used in
+tests and `DATA_MODE=memory` runs.
 
 ## Extraction strategy
 

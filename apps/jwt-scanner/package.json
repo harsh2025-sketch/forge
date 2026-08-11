@@ -5,13 +5,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "next build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "db:migrate": "pnpm build && node dist/db/migrate.js"
+    "db:migrate": "tsc -p tsconfig.build.json && node dist/db/migrate.js",
+    "e2e": "playwright test",
+    "dev": "next dev"
   },
   "dependencies": {
+    "@forge/adapter-clerk": "workspace:*",
+    "@forge/adapter-stripe": "workspace:*",
+    "@forge/auth": "workspace:*",
+    "@forge/billing": "workspace:*",
     "@forge/config": "workspace:*",
     "@forge/db": "workspace:*",
     "@forge/domain": "workspace:*",
@@ -19,10 +25,17 @@
     "@forge/shared": "workspace:*",
     "@forge/ui": "workspace:*",
     "drizzle-orm": "^0.38.0",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@forge/testing": "workspace:*",
+    "@playwright/test": "^1.40.0",
     "@types/node": "^26.2.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "eslint": "^8.0.0",
     "typescript": "^5.8.3",
     "vitest": "^1.0.0"

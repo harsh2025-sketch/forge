@@ -21,6 +21,14 @@ export default [
     },
   },
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/.turbo/**", "**/coverage/**"],
+    // .next is Next.js build output (produced by Task-013 products' web
+    // builds); like dist/ and .turbo/, it must never be linted.
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.turbo/**",
+      "**/coverage/**",
+      "**/.next/**",
+    ],
   },
 ];

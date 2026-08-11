@@ -10,11 +10,16 @@ client-supplied input.
 
 ## Authentication
 
-Authentication goes through the auth port (`authPort` from `src/providers.ts`).
-Routes and Server Actions require an authenticated principal before they run;
-unauthenticated requests are rejected by middleware. Credentials and session material
-are handled exclusively by the auth adapter; product code never reads or stores
-passwords or session secrets.
+Authentication goes through the auth port (`authPort` from `src/providers.ts`),
+implemented by the Clerk adapter (`@forge/adapter-clerk`). Routes and Server
+Actions require an authenticated principal before they run; the dashboard
+layout redirects unauthenticated requests to the landing page with an
+`auth=required` hint, and every server action and route handler re-checks
+authentication per request. Session material is handled exclusively by the
+auth adapter (the request-bound session resolver verifies the Clerk session
+token); product code never reads or stores passwords or session secrets.
+`AUTH_MODE=test` substitutes a deterministic in-memory AuthPort for local and
+E2E runs — never in live deployments.
 
 ## Authorization
 
@@ -41,16 +46,29 @@ secret was recovered. Algorithm confusion is an observed mismatch against an
 explicit caller-supplied allow-list. Expiration is evaluated only against the
 required caller-supplied NumericDate, never the host clock.
 
+## Data handling
+
+The scanned token itself is never persisted (V3 §11.3): findings store only
+decoded header/payload material (`sanitizeStoredEvidence` in
+`src/features/scans/persistence.ts`), and the report export derives all output
+from persisted results. The report and finding views show decoded evidence,
+never the raw token. Billing state is a neutral projection
+(`platform.subscriptions`); provider identifiers are stored only as opaque
+external ids.
+
 ## Threat mitigations
 
-- CSRF: state-changing actions require CSRF protection; webhooks verify provider
-  signatures before processing payloads.
+- CSRF: state-changing actions are Next.js server actions (same-origin
+  enforced); webhooks verify provider signatures before processing payloads.
 - SQL injection: all queries are typed Drizzle queries; raw SQL appears only in
   reviewed migrations.
 - XSS: React output is escaped; `dangerouslySetInnerHTML` is not used.
 - Secrets: real credentials never appear in code, logs, or committed files; only
   `.env.example` documents variable names.
-- Rate limiting: endpoints that create resources or send email are rate limited.
+- Tenant isolation (IDOR): every read and write of tenant-scoped data is
+  scoped by `withOrg()`, and service-layer tests assert cross-organization
+  access is denied.
+- Rate limiting: endpoints that create resources are rate limited.
 
 ## Reporting
 
