@@ -2,15 +2,16 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { validateProduct } from "./index.js";
-import type { ValidationDiagnostic } from "./index.js";
+import { discoverProducts, validateProduct } from "./index.js";
+import type { ValidationDiagnostic, ValidationReport } from "./index.js";
 
 function usage(): string {
   return [
-    "Usage: forge-extraction-validate <product> [options]",
+    "Usage: forge-extraction-validate [product] [options]",
     "",
-    "Validates a product after creation or extraction. Exit code 0 when there",
-    "are no blocking violations; 1 when there are; 2 for usage errors.",
+    "Validates a product after creation or extraction. When <product> is omitted,",
+    "every product under apps/ is validated. Exit code 0 when there are no",
+    "blocking violations; 1 when there are; 2 for usage errors.",
     "",
     "Options:",
     "  --root <repository>   Repository root (default: current directory)",
@@ -61,45 +62,65 @@ function parseArguments(arguments_: readonly string[]): ParsedArguments {
   return { product: positionals[0], root, jsonPath };
 }
 
+function emitReport(report: ValidationReport, label?: string): void {
+  const prefix = label === undefined ? "" : `${label}: `;
+  for (const diagnostic of report.diagnostics) {
+    const formatted = formatDiagnostic(diagnostic);
+    if (diagnostic.severity === "warning") console.warn(`${prefix}${formatted}`);
+    else console.error(`${prefix}${formatted}`);
+  }
+}
+
 try {
   const parsed = parseArguments(process.argv.slice(2));
-  if (parsed.product === undefined) {
-    console.error("Error: a product path or name is required.");
+  const products =
+    parsed.product === undefined ? [...discoverProducts(parsed.root)] : [parsed.product];
+
+  if (products.length === 0) {
+    console.error("Error: no products found under apps/. Pass a product name or path.");
     console.error(usage());
     process.exitCode = 2;
   } else {
-    const report = validateProduct({ root: parsed.root, product: parsed.product });
-    for (const diagnostic of report.diagnostics) {
-      if (diagnostic.severity === "warning") console.warn(formatDiagnostic(diagnostic));
-      else console.error(formatDiagnostic(diagnostic));
+    const reports: ValidationReport[] = [];
+    for (const product of products) {
+      const report = validateProduct({ root: parsed.root, product });
+      console.log(`Validating ${path.basename(report.productPath)} (${report.mode})`);
+      emitReport(report, parsed.product === undefined ? path.basename(report.productPath) : undefined);
+      reports.push(report);
     }
 
     if (parsed.jsonPath !== undefined) {
-      fs.writeFileSync(
-        parsed.jsonPath,
-        `${JSON.stringify(
-          {
-            product: report.productPath,
-            mode: report.mode,
-            errors: report.errors.length,
-            warnings: report.warnings.length,
-            diagnostics: report.diagnostics,
-          },
-          null,
-          2,
-        )}\n`,
-        "utf8",
-      );
+      const payload =
+        reports.length === 1
+          ? {
+              product: reports[0]!.productPath,
+              mode: reports[0]!.mode,
+              errors: reports[0]!.errors.length,
+              warnings: reports[0]!.warnings.length,
+              diagnostics: reports[0]!.diagnostics,
+            }
+          : {
+              products: reports.map((report) => ({
+                product: report.productPath,
+                mode: report.mode,
+                errors: report.errors.length,
+                warnings: report.warnings.length,
+                diagnostics: report.diagnostics,
+              })),
+            };
+      fs.writeFileSync(parsed.jsonPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
     }
 
-    if (report.errors.length > 0) {
+    const errorCount = reports.reduce((sum, report) => sum + report.errors.length, 0);
+    const warningCount = reports.reduce((sum, report) => sum + report.warnings.length, 0);
+    if (errorCount > 0) {
       console.error(
-        `\nExtraction validation failed: ${report.errors.length} error(s), ${report.warnings.length} warning(s) (mode: ${report.mode}).`,
+        `\nExtraction validation failed: ${errorCount} error(s), ${warningCount} warning(s), ${reports.length} product(s).`,
       );
       process.exitCode = 1;
     } else {
       console.log(
-        `Extraction validation passed: ${report.warnings.length} warning(s), 0 errors (mode: ${report.mode}).`,
+        `Extraction validation passed: ${warningCount} warning(s), 0 errors, ${reports.length} product(s).`,
       );
     }
   }

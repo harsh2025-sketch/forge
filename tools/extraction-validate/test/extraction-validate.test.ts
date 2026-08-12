@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { generateProduct } from "@forge/create-product";
 import { extractProduct } from "@forge/extract-product";
-import { ValidationError, validateProduct } from "../src/index.js";
+import { ValidationError, discoverProducts, validateProduct } from "../src/index.js";
 
 const temporaryRoots: string[] = [];
 
@@ -354,8 +354,32 @@ describe("extraction-validate CLI", () => {
   });
 
   it("exits 2 for usage errors", () => {
-    const run = spawnSync(process.execPath, [cli], { encoding: "utf8" });
+    const run = spawnSync(process.execPath, [cli, "--root"], { encoding: "utf8" });
     expect(run.status).toBe(2);
+  });
+
+  it("validates every discovered product when no product is named", () => {
+    const root = createFullFakeRepository();
+    generateProduct({ root, name: "zeta" });
+    generateProduct({ root, name: "alpha" });
+    expect(discoverProducts(root)).toEqual(["alpha", "zeta"]);
+
+    const run = spawnSync(process.execPath, [cli, "--root", root], { encoding: "utf8" });
+    expect(run.status).toBe(0);
+    expect(run.stdout).toMatch(/2 product\(s\)/);
+    expect(run.stdout).toMatch(/alpha/);
+    expect(run.stdout).toMatch(/zeta/);
+    expect(run.stdout).not.toMatch(/jwt-scanner/);
+  });
+
+  it("fails the all-product run when any discovered product is invalid", () => {
+    const root = createFullFakeRepository();
+    generateProduct({ root, name: "alpha" });
+    generateProduct({ root, name: "beta" });
+    fs.rmSync(path.join(root, "apps/beta/src/providers.ts"));
+    const run = spawnSync(process.execPath, [cli, "--root", root], { encoding: "utf8" });
+    expect(run.status).toBe(1);
+    expect(run.stderr).toMatch(/PROVIDERS_MISSING/);
   });
 
   it("writes a machine-readable report with --json", () => {

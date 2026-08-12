@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "pnpm build && vitest run",
-    "check": "node dist/cli.js --root ../.. jwt-scanner"
+    "check": "node dist/cli.js --root ../.."
   },
   "dependencies": {
     "@forge/architecture-check": "workspace:*",

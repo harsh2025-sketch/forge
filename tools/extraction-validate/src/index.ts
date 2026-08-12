@@ -786,6 +786,26 @@ function checkExtractionReport(
 // Entry point
 // ---------------------------------------------------------------------------
 
+/**
+ * Discovers product directory names under apps/ of a Forge repository.
+ * Deterministic (sorted). A product is an apps/<name> directory that has a
+ * package.json — the same rule validate-docs uses. No product id is hardcoded.
+ */
+export function discoverProducts(root: string): readonly string[] {
+  const appsRoot = path.join(path.resolve(root), "apps");
+  if (!fs.existsSync(appsRoot) || !fs.statSync(appsRoot).isDirectory()) {
+    return [];
+  }
+  return fs
+    .readdirSync(appsRoot, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isDirectory() && fs.existsSync(path.join(appsRoot, entry.name, "package.json")),
+    )
+    .map((entry) => entry.name)
+    .sort();
+}
+
 /** Resolves the product argument to an absolute product directory path. */
 export function resolveProductPath(root: string, product: string): string {
   const candidates = [path.resolve(root, product), path.resolve(root, "apps", product)];

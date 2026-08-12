@@ -282,21 +282,20 @@ to analyzer patterns (V3 §20.2).
 ## Product extraction
 
 Frozen principle P15: *every product must survive extraction at any time*. The repository
-enforces extraction readiness in two ways:
+enforces extraction readiness in three ways:
 
 - **`pnpm extract-product <source> <destination>`** — imports an existing application into the
   Forge V3 product structure with deterministic classification of every file and dependency
   (`SAFE` / `REVIEW` / `MANUAL`), provider isolation into a generated `providers.ts`, and a
   machine-readable extraction report.
-- **`pnpm extraction-validate jwt-scanner`** — validates a product against the frozen
-  structure, manifest, documentation, and provider-isolation rules (delegating to
-  `arch-check` + `validate-docs`). Runs monthly in CI.
-
-> **Note (honest divergence):** the frozen spec (V3 §16) describes `extract-product` as an
-> *export* tool that produces a standalone acquirable repository. The implemented tool is an
-> *import/classification* tool (matching `.ai/boundaries.md`), and the standalone-repo export
-> path is exercised through `extraction-validate` + the product's `docs/ACQUISITION.md`
-> workflow rather than an automated export CLI. See the final Task 014 report for details.
+- **`pnpm extract-product --export <id> <dest>`** — exports one Forge product as a standalone
+  workspace (that product only, the `@forge/*` packages it uses, and the architecture/docs
+  gates). Other products, factory CLIs, `node_modules`, and secrets are not copied.
+- **`pnpm extraction-validate [product]`** — validates one product, or every product under
+  `apps/` when the name is omitted, against the frozen structure, manifest, documentation,
+  and provider-isolation rules (delegating to `arch-check` + `validate-docs`). No product id
+  is hardcoded. Live credentials and a product-scoped `pg_dump` remain operational handoff
+  steps (see the product's `docs/ACQUISITION.md`).
 
 ---
 
@@ -333,7 +332,7 @@ The pre-commit hook (`pnpm arch-check`) runs automatically. Git hooks are config
 | `pnpm create-product …` | scaffold a runnable product under `apps/` |
 | `pnpm extract-product <src> <dest>` | import an existing app into Forge structure |
 | `pnpm extract-product --export <id> <dest>` | export a Forge product as a standalone workspace |
-| `pnpm extraction-validate <product>` | validate extraction readiness |
+| `pnpm extraction-validate [product]` | validate one product, or every product under `apps/` |
 
 ## Manual testing reference
 

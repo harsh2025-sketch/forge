@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "pnpm build && vitest run",
-    "check": "node dist/cli.js --help"
+    "check": "node dist/check.js"
   },
   "dependencies": {
     "@forge/config": "workspace:*",

@@ -8,12 +8,13 @@ This is a repository-level developer tool. It is never imported by applications.
 ## Usage
 
 ```bash
-pnpm extraction-validate <product> [--root <repository>] [--json <path>]
+pnpm extraction-validate [product] [--root <repository>] [--json <path>]
 ```
 
 `<product>` is a product name (resolved as `apps/<name>`) or a path to a product
-directory. Exit code `0` when there are no blocking violations, `1` when there
-are, `2` for usage errors.
+directory. When omitted, every product under `apps/` is validated. Exit code
+`0` when there are no blocking violations, `1` when there are, `2` for usage
+errors. No product id is hardcoded.
 
 ## What is validated
 
