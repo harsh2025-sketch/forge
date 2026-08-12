@@ -33,6 +33,7 @@ export function Hero({ title, subtitle, children, className }: HeroProps) {
       <h1
         style={{
           margin: 0,
+          color: tokenVar(["colors", "surface", "foreground"]),
           fontFamily: "var(--forge-typography-font-family-sans)",
           fontSize: "calc(var(--forge-typography-font-size) * 2.25)",
           fontWeight: "var(--forge-typography-heading-weight)",
@@ -72,7 +73,13 @@ export function FeatureList({ features, title, className }: FeatureListProps) {
   return (
     <section className={cn("forge-features", className)}>
       {title !== undefined && (
-        <h2 style={{ fontFamily: "var(--forge-typography-font-family-sans)", fontWeight: "var(--forge-typography-heading-weight)" }}>
+        <h2
+          style={{
+            color: tokenVar(["colors", "surface", "foreground"]),
+            fontFamily: "var(--forge-typography-font-family-sans)",
+            fontWeight: "var(--forge-typography-heading-weight)",
+          }}
+        >
           {title}
         </h2>
       )}
@@ -97,7 +104,15 @@ export function FeatureList({ features, title, className }: FeatureListProps) {
               backgroundColor: tokenVar(["colors", "surface", "background"]),
             }}
           >
-            <h3 style={{ marginTop: 0, fontWeight: "var(--forge-typography-heading-weight)" }}>{feature.title}</h3>
+            <h3
+              style={{
+                marginTop: 0,
+                color: tokenVar(["colors", "surface", "foreground"]),
+                fontWeight: "var(--forge-typography-heading-weight)",
+              }}
+            >
+              {feature.title}
+            </h3>
             <p style={{ margin: 0, color: tokenVar(["colors", "surface", "mutedForeground"]) }}>{feature.description}</p>
           </li>
         ))}
@@ -147,14 +162,33 @@ export function PricingTable({ tiers, className }: PricingTableProps) {
               backgroundColor: tokenVar(["colors", "surface", "background"]),
             }}
           >
-            <h3 style={{ marginTop: 0, fontWeight: "var(--forge-typography-heading-weight)" }}>{tier.name}</h3>
-            <p style={{ fontSize: "calc(var(--forge-typography-font-size) * 1.5)", fontWeight: "var(--forge-typography-heading-weight)" }}>
+            <h3
+              style={{
+                marginTop: 0,
+                color: tokenVar(["colors", "surface", "foreground"]),
+                fontWeight: "var(--forge-typography-heading-weight)",
+              }}
+            >
+              {tier.name}
+            </h3>
+            <p
+              style={{
+                color: tokenVar(["colors", "surface", "foreground"]),
+                fontSize: "calc(var(--forge-typography-font-size) * 1.5)",
+                fontWeight: "var(--forge-typography-heading-weight)",
+              }}
+            >
               {tier.price}
             </p>
             {tier.description !== undefined && (
               <p style={{ color: tokenVar(["colors", "surface", "mutedForeground"]) }}>{tier.description}</p>
             )}
-            <ul style={{ paddingLeft: "calc(var(--forge-spacing-unit) * 4)" }}>
+            <ul
+              style={{
+                paddingLeft: "calc(var(--forge-spacing-unit) * 4)",
+                color: tokenVar(["colors", "surface", "foreground"]),
+              }}
+            >
               {tier.features.map((feature) => (
                 <li key={feature}>{feature}</li>
               ))}

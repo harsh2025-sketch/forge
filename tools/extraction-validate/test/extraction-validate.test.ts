@@ -80,7 +80,7 @@ function createFullFakeRepository(): string {
   write(
     root,
     ".ai/boundaries.md",
-    `# Boundaries\n\n${filler}\n\n## packages/shared\n\n${filler}\n\n## packages/domain\n\n${filler}\n\n## packages/config\n\n${filler}\n`,
+    `# Boundaries\n\n${filler}\n\n## packages/shared\n\n${filler}\n\n## packages/domain\n\n${filler}\n\n## packages/config\n\n${filler}\n\n## packages/auth\n\n${filler}\n\n## packages/billing\n\n${filler}\n\n## packages/db\n\n${filler}\n\n## packages/ui\n\n${filler}\n\n## packages/testing\n\n${filler}\n`,
   );
   write(
     root,
@@ -102,6 +102,22 @@ function createFullFakeRepository(): string {
   fakePackage(root, "packages/shared", "@forge/shared");
   fakePackage(root, "packages/domain", "@forge/domain");
   fakePackage(root, "packages/config", "@forge/config");
+  fakePackage(root, "packages/auth", "@forge/auth");
+  fakePackage(root, "packages/billing", "@forge/billing");
+  fakePackage(root, "packages/db", "@forge/db");
+  write(
+    root,
+    "packages/db/src/schema/usage-records.ts",
+    'import { uuid } from "drizzle-orm/pg-core";\nimport { products } from "./products.js";\nexport const usageRecords = { productId: uuid("product_id").notNull().references(() => products.id) };\n',
+  );
+  write(
+    root,
+    "packages/db/src/schema/audit-events.ts",
+    'import { uuid } from "drizzle-orm/pg-core";\nimport { products } from "./products.js";\nexport const auditEvents = { productId: uuid("product_id").notNull().references(() => products.id) };\n',
+  );
+  write(root, "packages/db/src/schema/products.ts", "export const products = { id: true };\n");
+  fakePackage(root, "packages/ui", "@forge/ui");
+  fakePackage(root, "packages/testing", "@forge/testing");
   return root;
 }
 
@@ -204,7 +220,7 @@ describe("extraction-validate structure and isolation", () => {
   it("fails on unknown @forge packages and undeclared forge dependencies", () => {
     const errors = standaloneErrors("demo", (product) => {
       write(product, "src/features/x.ts", 'import { thing } from "@forge/not-a-package";\nexport const x = thing;\n');
-      write(product, "src/features/y.ts", 'import { db } from "@forge/db";\nexport const y = db;\n');
+      write(product, "src/features/y.ts", 'import { storage } from "@forge/storage";\nexport const y = storage;\n');
     });
     expect(errors).toContain("UNKNOWN_FORGE_PACKAGE");
     expect(errors).toContain("UNDECLARED_FORGE_DEPENDENCY");
@@ -212,7 +228,7 @@ describe("extraction-validate structure and isolation", () => {
 
   it("fails when a port is imported from providers but not exported (provider wiring)", () => {
     const errors = standaloneErrors("demo", (product) =>
-      write(product, "src/features/actions.ts", 'import { authPort } from "@/providers";\nexport const run = authPort;\n'),
+      write(product, "src/features/actions.ts", 'import { emailPort } from "@/providers";\nexport const run = emailPort;\n'),
     );
     expect(errors).toContain("PROVIDER_WIRING");
 

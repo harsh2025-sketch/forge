@@ -382,7 +382,7 @@ Then import from providers: `import { authPort } from "@/providers";`
 
 ## tools/extract-product
 
-**Purpose:** Import an existing application into the Forge V3 product structure (never imported by apps).
+**Purpose:** Import an existing application into the Forge V3 product structure, or export a Forge product as a standalone workspace (never imported by apps).
 **Allowed to import:**
 - packages/shared, packages/config
 - tools/create-product (product templates)

@@ -49,7 +49,44 @@ export interface PlanDefinition {
 }
 
 /**
+ * Provider slots a product may bind. Values are adapter identifiers
+ * (`test`, `clerk`, `stripe`, `none`, …) — never vendor SDK types.
+ */
+export const ProviderSlot = {
+  AUTH: "auth",
+  BILLING: "billing",
+  EMAIL: "email",
+  ANALYTICS: "analytics",
+  JOBS: "jobs",
+  STORAGE: "storage",
+} as const;
+
+export type ProviderSlot = (typeof ProviderSlot)[keyof typeof ProviderSlot];
+
+/** Configuration-driven provider bindings declared by the product. */
+export interface ProductProviders {
+  readonly auth?: string;
+  readonly billing?: string;
+  readonly email?: string;
+  readonly analytics?: string;
+  readonly jobs?: string;
+  readonly storage?: string;
+}
+
+/** Named environment variable the product reads. Values are never stored here. */
+export interface EnvironmentRequirement {
+  readonly name: string;
+  readonly required: boolean;
+  readonly secret?: boolean;
+  readonly description?: string;
+}
+
+/**
  * Product manifest per FORGE-MASTER-ARCHITECTURE-V3 §8.1
+ *
+ * `providers` and `environment` are optional so existing manifests remain
+ * valid. Tooling uses them to scaffold and validate configuration without
+ * executing product code.
  */
 export interface ProductManifest {
   readonly id: string;
@@ -60,6 +97,8 @@ export interface ProductManifest {
   readonly plans: readonly PlanDefinition[];
   readonly requiresWorker: boolean;
   readonly requiresAIProvider: boolean;
+  readonly providers?: ProductProviders;
+  readonly environment?: readonly EnvironmentRequirement[];
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +107,8 @@ export interface ProductManifest {
 
 const ARCHETYPE_VALUES = Object.values(Archetype) as readonly string[];
 const CAPABILITY_VALUES = Object.values(Capability) as readonly string[];
+const PROVIDER_SLOT_VALUES = Object.values(ProviderSlot) as readonly string[];
+const ENV_NAME_RE = /^[A-Z][A-Z0-9_]*$/;
 
 /**
  * Type guard for Archetype.
@@ -192,6 +233,94 @@ function validatePlanDefinition(
     limits: p.limits as Readonly<Record<string, number>> | undefined,
     features: p.features as readonly string[] | undefined,
   });
+}
+
+function validateProviders(input: unknown): Result<ProductProviders, ConfigError> {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    return err(new ConfigError("Product manifest providers must be an object", { details: { field: "providers" } }));
+  }
+  const raw = input as Record<string, unknown>;
+  const providers: Record<string, string> = {};
+  for (const [slot, adapter] of Object.entries(raw)) {
+    if (!PROVIDER_SLOT_VALUES.includes(slot)) {
+      return err(
+        new ConfigError(
+          `Invalid provider slot "${slot}": must be one of ${PROVIDER_SLOT_VALUES.join(", ")}`,
+          { details: { field: `providers.${slot}` } },
+        ),
+      );
+    }
+    if (!isNonEmptyString(adapter) || adapter.length > 64) {
+      return err(
+        new ConfigError(`providers.${slot} must be a non-empty adapter identifier (e.g. "test", "clerk", "none")`, {
+          details: { field: `providers.${slot}` },
+        }),
+      );
+    }
+    providers[slot] = adapter;
+  }
+  return ok(providers);
+}
+
+function validateEnvironment(input: unknown): Result<readonly EnvironmentRequirement[], ConfigError> {
+  if (!Array.isArray(input)) {
+    return err(new ConfigError("Product manifest environment must be an array", { details: { field: "environment" } }));
+  }
+  const seen = new Set<string>();
+  const requirements: EnvironmentRequirement[] = [];
+  for (let index = 0; index < input.length; index += 1) {
+    const entry = input[index];
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      return err(
+        new ConfigError(`Invalid environment entry at index ${index}: expected object`, {
+          details: { field: `environment.${String(index)}` },
+        }),
+      );
+    }
+    const raw = entry as Record<string, unknown>;
+    if (!isNonEmptyString(raw.name) || !ENV_NAME_RE.test(raw.name)) {
+      return err(
+        new ConfigError(
+          `Invalid environment entry at index ${index}: name must be an UPPER_SNAKE_CASE identifier`,
+          { details: { field: `environment.${String(index)}.name` } },
+        ),
+      );
+    }
+    if (seen.has(raw.name)) {
+      return err(
+        new ConfigError(`Duplicate environment variable: ${raw.name}`, { details: { field: "environment" } }),
+      );
+    }
+    seen.add(raw.name);
+    if (typeof raw.required !== "boolean") {
+      return err(
+        new ConfigError(`Invalid environment entry ${raw.name}: required must be a boolean`, {
+          details: { field: `environment.${String(index)}.required` },
+        }),
+      );
+    }
+    if (raw.secret !== undefined && typeof raw.secret !== "boolean") {
+      return err(
+        new ConfigError(`Invalid environment entry ${raw.name}: secret must be a boolean if provided`, {
+          details: { field: `environment.${String(index)}.secret` },
+        }),
+      );
+    }
+    if (raw.description !== undefined && typeof raw.description !== "string") {
+      return err(
+        new ConfigError(`Invalid environment entry ${raw.name}: description must be a string if provided`, {
+          details: { field: `environment.${String(index)}.description` },
+        }),
+      );
+    }
+    requirements.push({
+      name: raw.name,
+      required: raw.required,
+      secret: raw.secret as boolean | undefined,
+      description: raw.description as string | undefined,
+    });
+  }
+  return ok(requirements);
 }
 
 /**
@@ -335,6 +464,20 @@ export function validateProductManifest(
     );
   }
 
+  let providers: ProductProviders | undefined;
+  if (m.providers !== undefined) {
+    const providerResult = validateProviders(m.providers);
+    if (!providerResult.ok) return providerResult as Result<never, ConfigError>;
+    providers = providerResult.value;
+  }
+
+  let environment: readonly EnvironmentRequirement[] | undefined;
+  if (m.environment !== undefined) {
+    const environmentResult = validateEnvironment(m.environment);
+    if (!environmentResult.ok) return environmentResult as Result<never, ConfigError>;
+    environment = environmentResult.value;
+  }
+
   return ok({
     id: m.id as string,
     displayName: m.displayName as string,
@@ -344,6 +487,8 @@ export function validateProductManifest(
     plans: validatedPlans,
     requiresWorker: m.requiresWorker as boolean,
     requiresAIProvider: m.requiresAIProvider as boolean,
+    providers,
+    environment,
   });
 }
 

@@ -13,10 +13,16 @@
 export { ConfigError, isConfigError } from "./errors.js";
 
 // Product manifest
-export type { PlanDefinition, ProductManifest } from "./product-manifest.js";
+export type {
+  EnvironmentRequirement,
+  PlanDefinition,
+  ProductManifest,
+  ProductProviders,
+} from "./product-manifest.js";
 export {
   Archetype,
   Capability,
+  ProviderSlot,
   defineProductManifest,
   isArchetype,
   isCapability,

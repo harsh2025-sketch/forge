@@ -21,7 +21,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "pnpm build && vitest run",
-    "check": "node dist/cli.js --root ../.."
+    "check": "node dist/cli.js --help"
   },
   "dependencies": {
     "@forge/config": "workspace:*",

@@ -133,6 +133,8 @@ describe("ui package neutrality", () => {
       "status-badge",
       "severity-badge",
       "empty-state",
+      "error-state",
+      "notice",
       "loading-state",
       "pagination",
     ]) {

@@ -337,17 +337,19 @@ schemas:
 When acquiring a product:
 
 ```bash
-pnpm extract-product my-analyzer
+pnpm extract-product --export my-analyzer ./my-analyzer-standalone
 
-# Produces standalone repo with:
-  ├── Identical source code (just my-analyzer/)
-  ├── Exported product schema (pg_dump --schema=my_analyzer)
-  ├── Exported related platform records
-  ├── Independent docker-compose.yml
-  └── Standalone package.json
+# Produces a standalone Forge workspace with:
+  ├── apps/my-analyzer/          # this product only
+  ├── packages/                  # only the @forge/* packages it uses
+  ├── tools/architecture-check   # validation gates kept
+  ├── tools/validate-docs
+  └── package.json               # single-product workspace (no factory CLIs)
 ```
 
-The extracted product is **immediately deployable** with zero code changes.
+Run `pnpm install && pnpm validate` in the destination. Live provider credentials
+and a product-scoped `pg_dump` remain operational handoff steps (see the
+product's `docs/ACQUISITION.md`).
 
 ---
 

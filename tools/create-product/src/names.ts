@@ -21,6 +21,11 @@ export function toHumanName(id: string): string {
     .join(" ");
 }
 
+/** Converts a product id into a PostgreSQL schema name ("jwt-scanner" -> "jwt_scanner"). */
+export function schemaName(id: string): string {
+  return id.replace(/-/g, "_");
+}
+
 /**
  * Deterministically derives a product id from an arbitrary directory name.
  * Non-slug characters become hyphens; runs of hyphens collapse; leading and

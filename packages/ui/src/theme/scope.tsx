@@ -28,7 +28,19 @@ export function ThemeScope({
   id,
   children,
 }: ThemeScopeProps): ReactNode {
-  const style = themeToCssVariables(tokens) as CSSProperties;
+  const variables = themeToCssVariables(tokens);
+  // CSS custom properties inherit, but browser default text color (black) does
+  // not. Dark-theme products were rendering unreadable headings until the
+  // scope itself established surface color, background, and font as inheritable
+  // CSS properties. Products customize identity through tokens; this is the
+  // framework theming mechanism, not product-specific styling.
+  const style = {
+    ...variables,
+    color: variables["--forge-colors-surface-foreground"],
+    backgroundColor: variables["--forge-colors-surface-background"],
+    fontFamily: variables["--forge-typography-font-family-sans"],
+    minHeight: "100%",
+  } as CSSProperties;
   return (
     <Tag id={id} className={cn("forge-theme", className)} style={style} data-forge-theme="true">
       {children}
