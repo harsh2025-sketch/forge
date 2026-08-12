@@ -38,3 +38,7 @@ export {
   normalizePaginationParams,
   createPaginatedResult,
 } from "./pagination.js";
+
+// Logging
+export type { CreateLoggerOptions, LogLevel, LogRecord, Logger } from "./logger.js";
+export { createLogger, isSecretKey, redactContext } from "./logger.js";

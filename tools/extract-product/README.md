@@ -9,7 +9,11 @@ This is a repository-level developer tool. It is never imported by applications.
 ## Usage
 
 ```bash
+# Import an existing application into Forge product structure
 pnpm extract-product <source> <destination> [options]
+
+# Export a Forge product as a standalone workspace (acquisition)
+pnpm extract-product --export <product-id> <destination> [--root <repository>]
 ```
 
 | Option | Description |
@@ -19,7 +23,8 @@ pnpm extract-product <source> <destination> [options]
 | `--capabilities <list>` | Comma-separated capabilities, e.g. `reporting,scheduling` |
 | `--requires-worker` | Declare `requiresWorker: true` in the manifest |
 | `--requires-ai` | Declare `requiresAIProvider: true` in the manifest |
-| `--root <repository>` | Forge repository root (report context only) |
+| `--export` | Export an existing Forge product to a standalone workspace |
+| `--root <repository>` | Forge repository root |
 | `-h`, `--help` | Show help |
 
 The destination must not exist. Nothing is ever overwritten or deleted.
@@ -81,14 +86,32 @@ The source is treated as untrusted input:
 - nothing is ever deleted; an existing destination is an error
 - no shells are spawned and no dependency installation is performed
 
+## Export (acquisition direction)
+
+```bash
+pnpm extract-product --export jwt-scanner ./jwt-scanner-standalone
+```
+
+The exporter copies:
+
+- `apps/<product>/` only (never other products)
+- the `@forge/*` packages that product actually depends on, transitively
+- validation tools (`architecture-check`, `validate-docs`)
+- framework docs and `.ai` governance files
+
+It does **not** copy factory tooling (`create-product`, `extract-product`),
+secrets, lockfiles, `node_modules`, or other products. The destination is a
+single-product Forge workspace. Run `pnpm install` there to generate a new
+lockfile, then `pnpm validate`.
+
 ## Limitations
 
-- Extraction is deterministic and honest, not magical: items the tool cannot
+- Import is deterministic and honest, not magical: items the tool cannot
   safely transform are reported as `MANUAL`, and the primary archetype is
   always confirmed by a human.
-- Vendor SDKs are **not** carried into the generated `package.json`; each
+- Vendor SDKs are **not** carried into an imported `package.json`; each
   integration must be migrated behind its Forge port (see `docs/PROVIDERS.md`
   in the extracted product).
-- This tool implements the *import* direction (existing application → Forge
-  product). The *acquisition* direction (Forge product → standalone repository,
-  master architecture §16) is a separate flow.
+- Export does not rewrite workspace protocol dependencies into published
+  package versions. The standalone repo still uses `workspace:*` and the
+  copied Forge packages.

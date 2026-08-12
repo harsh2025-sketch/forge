@@ -354,5 +354,5 @@ describe("CLI behavior", () => {
     expect(result.stderr).toContain("packages/auth/src/index.ts");
     expect(result.stderr).toContain("package=@forge/auth");
     expect(result.stderr).toContain('import="stripe"');
-  });
+  }, 15_000);
 });

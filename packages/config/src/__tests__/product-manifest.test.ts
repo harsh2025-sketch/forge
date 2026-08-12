@@ -227,4 +227,65 @@ describe("product-manifest", () => {
       expect(result.ok).toBe(true);
     });
   });
+
+  describe("optional providers and environment", () => {
+    it("accepts configuration-driven provider bindings", () => {
+      const result = validateProductManifest({
+        ...validManifest(),
+        providers: { auth: "test", billing: "stripe", email: "none" },
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.providers).toEqual({ auth: "test", billing: "stripe", email: "none" });
+      }
+    });
+
+    it("rejects an unknown provider slot", () => {
+      const result = validateProductManifest({
+        ...validManifest(),
+        providers: { redis: "upstash" },
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.message).toMatch(/provider slot/);
+    });
+
+    it("accepts environment requirements and rejects invalid names", () => {
+      const valid = validateProductManifest({
+        ...validManifest(),
+        environment: [
+          { name: "DATABASE_URL", required: false, secret: true, description: "Postgres" },
+          { name: "AUTH_MODE", required: false },
+        ],
+      });
+      expect(valid.ok).toBe(true);
+      if (valid.ok) expect(valid.value.environment).toHaveLength(2);
+
+      const invalid = validateProductManifest({
+        ...validManifest(),
+        environment: [{ name: "database-url", required: true }],
+      });
+      expect(invalid.ok).toBe(false);
+    });
+
+    it("rejects duplicate environment names", () => {
+      const result = validateProductManifest({
+        ...validManifest(),
+        environment: [
+          { name: "APP_URL", required: false },
+          { name: "APP_URL", required: true },
+        ],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.message).toMatch(/Duplicate environment/);
+    });
+
+    it("omits providers and environment when they are not declared", () => {
+      const result = validateProductManifest(validManifest());
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.providers).toBeUndefined();
+        expect(result.value.environment).toBeUndefined();
+      }
+    });
+  });
 });

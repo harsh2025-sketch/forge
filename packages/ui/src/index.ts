@@ -72,8 +72,12 @@ export { SeverityBadge } from "./composites/severity-badge.js";
 export type { SeverityBadgeProps } from "./composites/severity-badge.js";
 export { EmptyState } from "./composites/empty-state.js";
 export type { EmptyStateProps } from "./composites/empty-state.js";
+export { ErrorState } from "./composites/error-state.js";
+export type { ErrorStateProps } from "./composites/error-state.js";
 export { LoadingState } from "./composites/loading-state.js";
 export type { LoadingStateProps } from "./composites/loading-state.js";
+export { Notice } from "./composites/notice.js";
+export type { NoticeProps, NoticeTone } from "./composites/notice.js";
 export { Pagination } from "./composites/pagination.js";
 export type { PaginationProps } from "./composites/pagination.js";
 

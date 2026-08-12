@@ -224,3 +224,37 @@ export function themeToCss(tokens: ThemeTokens, selector = ":root"): string {
     .join("\n");
   return `${selector} {\n${declarations}\n}`;
 }
+
+/**
+ * Document-level theme application that every product can embed in globals.css.
+ *
+ * ThemeScope applies the same inheritable color/background/font to a React
+ * subtree. This stylesheet covers the document itself (html/body/headings)
+ * so dark-theme products do not inherit the browser's default black text.
+ * Reduced-motion is honored at the framework layer; products may add more.
+ */
+export function themeBaseCss(): string {
+  return [
+    "html, body {",
+    "  margin: 0;",
+    "  color: var(--forge-colors-surface-foreground);",
+    "  background-color: var(--forge-colors-surface-background);",
+    "  font-family: var(--forge-typography-font-family-sans);",
+    "}",
+    "h1, h2, h3, h4, h5, h6 {",
+    "  color: inherit;",
+    "  font-family: inherit;",
+    "  font-weight: var(--forge-typography-heading-weight);",
+    "}",
+    "a {",
+    "  color: var(--forge-colors-brand-primary);",
+    "}",
+    "@media (prefers-reduced-motion: reduce) {",
+    "  *, *::before, *::after {",
+    "    animation-duration: 0.01ms !important;",
+    "    animation-iteration-count: 1 !important;",
+    "    transition-duration: 0.01ms !important;",
+    "  }",
+    "}",
+  ].join("\n");
+}

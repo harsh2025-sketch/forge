@@ -1,7 +1,7 @@
 # create-product
 
-Forge V3 product scaffolding tool. Generates a validated product skeleton under
-`apps/<product-id>/` of the Forge repository.
+Forge V3 product scaffolding tool. Generates a validated, runnable product
+skeleton under `apps/<product-id>/` of the Forge repository.
 
 This is a repository-level developer tool. It is never imported by applications.
 
@@ -26,29 +26,34 @@ pnpm create-product <product-name> [options]
 Examples:
 
 ```bash
-pnpm create-product jwt-scanner --archetype analyzer --capabilities reporting
-pnpm create-product api-gateway --archetype gateway --manifest=product.manifest.ts
+pnpm create-product license-scanner --archetype analyzer --capabilities reporting
+pnpm create-product api-gateway --archetype gateway
 ```
 
 ## What is generated
 
 ```
 apps/<product-id>/
-├── product.manifest.ts        # Static manifest (defineProductManifest with literals)
+├── product.manifest.ts        # Static manifest (archetype, capabilities, providers, env)
 ├── README.md
-├── package.json               # Forge workspace deps only; no vendor SDKs
+├── package.json               # Next.js + Forge workspace deps; no vendor SDKs
 ├── tsconfig.json
-├── docs/                      # The ten required product documents (>200 words each)
-│   ├── ARCHITECTURE.md  SETUP.md  DEPLOYMENT.md  DATABASE.md
-│   ├── PROVIDERS.md  API.md  TESTING.md  SECURITY.md
-│   └── OPERATIONS.md  ACQUISITION.md
+├── next.config.mjs
+├── vitest.config.ts
+├── playwright.config.ts
+├── Dockerfile / docker-compose.yml
+├── .env.example
+├── e2e/smoke.spec.ts          # Landing + health smoke tests
+├── docs/                      # The ten required product documents
 └── src/
-    ├── providers.ts           # Composition root — the only file allowed to import adapters
-    ├── domain/                # Pure domain logic
-    │   ├── engine.ts          # Implements the archetype contract from @forge/domain
-    │   ├── types.ts  schemas.ts
-    │   └── __tests__/engine.test.ts
-    ├── app/  features/  db/  theme/   # Frozen structure (documented, not yet implemented)
+    ├── providers.ts           # Composition root — test-mode AuthPort + BillingPort
+    ├── dev-mode/              # Product-local test seams (not @forge/testing)
+    ├── domain/                # Archetype engine, Zod schemas, unit tests
+    ├── app/                   # Next.js landing, workspace, /api/health
+    ├── components/landing/    # Product-owned landing (not JWT Scanner)
+    ├── theme/                 # Design tokens starting from the framework baseline
+    ├── db/                    # Named schema + tenant-scoped records table
+    ├── features/auth/         # Session helper over AuthPort
     └── worker/                # Only when --requires-worker
 ```
 
@@ -59,9 +64,10 @@ apps/<product-id>/
   `validateProductManifest` from `@forge/config` before anything is written.
 - **Provider isolation** — `src/providers.ts` is the only adapter entry point.
 - **No vendor SDKs by default** — the generated `package.json` contains no vendor
-  SDK dependencies.
-- **No database implementation** — the skeleton ships no schema or query code;
-  `src/db/` documents where persistence is added during implementation.
+  SDK dependencies. Live Clerk/Stripe adapters are added later by the product.
+- **Runs without credentials** — `AUTH_MODE=test BILLING_MODE=test DATA_MODE=memory`.
+- **Independent visual identity** — tokens start from `@forge/ui` `defaultTheme`,
+  not from JWT Scanner's dark security-tool theme.
 - **Passes validation immediately** — a generated product passes `pnpm arch-check`,
   `pnpm validate-docs`, and `pnpm extraction-validate <product-id>`.
 - **Deterministic** — identical options produce byte-identical output.
@@ -80,9 +86,12 @@ Declared capabilities add the matching Forge subsystem to `package.json`:
 | `requiresWorker` | `@forge/jobs` |
 | `requiresAIProvider` | `@forge/ai-provider` |
 
+Every product also receives the reusable SaaS boundary packages: `@forge/auth`,
+`@forge/billing`, `@forge/db`, and `@forge/ui`.
+
 ## Limitations
 
-- The skeleton is tooling-level scaffolding, not a finished product: the Next.js
-  application layer, Docker files, database schema, and E2E tests are added during
-  product implementation (per the Task 010 boundary).
+- The scaffold is a runnable product shell, not a finished SaaS. Domain algorithms,
+  product-specific screens, and live provider credentials are still supplied by
+  the product team.
 - Only static literal manifests are accepted; dynamic manifest values are rejected.

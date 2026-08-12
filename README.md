@@ -32,10 +32,9 @@ fail CI. Product code is written against provider-neutral **ports**; infrastruct
 (Clerk, Stripe, Resend, …) live behind **adapters** and can be swapped without touching
 product logic.
 
-> **Status:** Tasks 001–013 of the frozen V3 plan are implemented and integrated
-> (framework, tooling, CI, and the first product — JWT Scanner). Task 014 delivers final
-> hardening, documentation, and launch readiness. Task 015 is manual testing on a real
-> Windows workstation. See [Current framework status](#current-framework-status).
+> **Status:** Tasks 001–014 of the frozen V3 plan are implemented. Task 015 hardens the
+> factory so a new product can be scaffolded, validated, and exported without rebuilding
+> infrastructure. See [Current framework status](#current-framework-status).
 
 ---
 
@@ -268,9 +267,11 @@ pnpm create-product my-analyzer --archetype analyzer --capabilities reporting
 ```
 
 Scaffolds a complete, valid product skeleton at `apps/my-analyzer/`:
-Next.js app, `domain/engine.ts` implementing the archetype contract, Zod schemas, Drizzle
-schema, `providers.ts`, theme tokens, Docker files, the 10 required docs, and a Playwright
-smoke test. The skeleton passes `pnpm arch-check` and builds.
+Next.js app (product-owned landing + workspace, not JWT Scanner), `domain/engine.ts`
+implementing the archetype contract, Zod schemas, Drizzle schema, test-mode
+`providers.ts`, theme tokens starting from the framework baseline, Docker files,
+the 10 required docs, and a Playwright smoke test. The skeleton passes
+`pnpm arch-check` and runs locally with `AUTH_MODE=test BILLING_MODE=test DATA_MODE=memory`.
 
 **Product archetypes** (6): `analyzer` · `optimizer` · `generator` · `transformer` ·
 `middleware` (runtime) · `gateway`. Each maps to an engine contract in `@forge/domain`
@@ -281,21 +282,20 @@ to analyzer patterns (V3 §20.2).
 ## Product extraction
 
 Frozen principle P15: *every product must survive extraction at any time*. The repository
-enforces extraction readiness in two ways:
+enforces extraction readiness in three ways:
 
 - **`pnpm extract-product <source> <destination>`** — imports an existing application into the
   Forge V3 product structure with deterministic classification of every file and dependency
   (`SAFE` / `REVIEW` / `MANUAL`), provider isolation into a generated `providers.ts`, and a
   machine-readable extraction report.
-- **`pnpm extraction-validate jwt-scanner`** — validates a product against the frozen
-  structure, manifest, documentation, and provider-isolation rules (delegating to
-  `arch-check` + `validate-docs`). Runs monthly in CI.
-
-> **Note (honest divergence):** the frozen spec (V3 §16) describes `extract-product` as an
-> *export* tool that produces a standalone acquirable repository. The implemented tool is an
-> *import/classification* tool (matching `.ai/boundaries.md`), and the standalone-repo export
-> path is exercised through `extraction-validate` + the product's `docs/ACQUISITION.md`
-> workflow rather than an automated export CLI. See the final Task 014 report for details.
+- **`pnpm extract-product --export <id> <dest>`** — exports one Forge product as a standalone
+  workspace (that product only, the `@forge/*` packages it uses, and the architecture/docs
+  gates). Other products, factory CLIs, `node_modules`, and secrets are not copied.
+- **`pnpm extraction-validate [product]`** — validates one product, or every product under
+  `apps/` when the name is omitted, against the frozen structure, manifest, documentation,
+  and provider-isolation rules (delegating to `arch-check` + `validate-docs`). No product id
+  is hardcoded. Live credentials and a product-scoped `pg_dump` remain operational handoff
+  steps (see the product's `docs/ACQUISITION.md`).
 
 ---
 
@@ -328,9 +328,11 @@ The pre-commit hook (`pnpm arch-check`) runs automatically. Git hooks are config
 | `pnpm typecheck` | strict TypeScript |
 | `pnpm test` | full unit + conformance + integration suite |
 | `pnpm audit` (or `pnpm audit --audit-level=high`) | dependency vulnerability scan |
-| `pnpm create-product …` | scaffold a product |
-| `pnpm extract-product …` | import an existing app into Forge structure |
-| `pnpm extraction-validate <product>` | validate extraction readiness |
+| `pnpm validate` | architecture + docs + lint + typecheck + test |
+| `pnpm create-product …` | scaffold a runnable product under `apps/` |
+| `pnpm extract-product <src> <dest>` | import an existing app into Forge structure |
+| `pnpm extract-product --export <id> <dest>` | export a Forge product as a standalone workspace |
+| `pnpm extraction-validate [product]` | validate one product, or every product under `apps/` |
 
 ## Manual testing reference
 
@@ -348,12 +350,13 @@ troubleshooting — lives in **[docs/MANUAL_TESTING.md](docs/MANUAL_TESTING.md)*
 | Framework packages (shared, config, domain, db, ui, reporting, testing) | ✅ implemented & tested |
 | Port packages (auth, billing, email, analytics, storage, jobs, ai-provider) | ✅ implemented & tested |
 | Adapters (clerk, stripe, resend, pg-boss) | ✅ implemented, conformance-tested |
-| Tooling (architecture-check, create-product, extract-product, extraction-validate, validate-docs) | ✅ implemented & tested |
-| CI/CD (ci, arch-check, extraction-validate, security-audit) | ✅ implemented |
+| Tooling (architecture-check, create-product, extract-product export, extraction-validate, validate-docs) | ✅ implemented & tested |
+| CI/CD (ci, arch-check, extraction-validate, audit) | ✅ implemented |
 | First product (JWT Scanner, analyzer) | ✅ implemented (Task 013), integrated & smoke-tested (Task 014) |
-| Dependency security | ✅ `pnpm audit` — zero known vulnerabilities |
-| Framework documentation + manual testing guide | ✅ Task 014 |
-| Browser E2E / live-provider / real-Postgres verification | ⏳ manual — Task 015 (see `docs/MANUAL_TESTING.md`) |
+| Factory readiness (create Product #3 without rebuilding infrastructure) | ✅ Task 015 |
+| Dependency security | ✅ `pnpm audit --audit-level=high` in CI |
+| Framework documentation + manual testing guide | ✅ Task 014 / 015 |
+| Browser E2E / live-provider / real-Postgres verification | ⏳ manual — see `docs/MANUAL_TESTING.md` |
 
 ## License
 

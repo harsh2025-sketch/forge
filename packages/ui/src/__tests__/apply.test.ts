@@ -13,6 +13,7 @@ import {
   resolveShadow,
   resolveSidebarWidth,
   resolveSpacingUnit,
+  themeBaseCss,
   themeToCss,
   themeToCssVariables,
   tokenVar,
@@ -156,6 +157,17 @@ describe("themeToCss", () => {
 
   it("produces different stylesheets for the two themes", () => {
     expect(themeToCss(defaultTheme)).not.toBe(themeToCss(contrastingTheme));
+  });
+});
+
+describe("themeBaseCss", () => {
+  it("applies inheritable document color so dark themes are readable", () => {
+    const css = themeBaseCss();
+    expect(css).toContain("color: var(--forge-colors-surface-foreground)");
+    expect(css).toContain("background-color: var(--forge-colors-surface-background)");
+    expect(css).toContain("h1, h2, h3, h4, h5, h6");
+    expect(css).toContain("prefers-reduced-motion: reduce");
+    expect(themeBaseCss()).toBe(css);
   });
 });
 

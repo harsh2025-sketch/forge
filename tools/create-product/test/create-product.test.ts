@@ -81,6 +81,21 @@ describe("create-product generation", () => {
       "src/domain/schemas.ts",
       "src/domain/__tests__/engine.test.ts",
       "src/app/README.md",
+      "src/app/layout.tsx",
+      "src/app/page.tsx",
+      "src/app/api/health/route.ts",
+      "src/components/landing/landing-page.tsx",
+      "src/dev-mode/auth.ts",
+      "src/dev-mode/billing.ts",
+      "src/theme/tokens.ts",
+      "src/theme/globals.css",
+      "src/db/schema.ts",
+      "src/db/client.ts",
+      "Dockerfile",
+      "docker-compose.yml",
+      "playwright.config.ts",
+      "e2e/smoke.spec.ts",
+      ".env.example",
       "src/features/README.md",
       "src/db/README.md",
       "src/theme/README.md",
@@ -147,6 +162,9 @@ describe("create-product generation", () => {
       expect(packageJson.dependencies[vendor], vendor).toBeUndefined();
     }
     expect(packageJson.dependencies["@forge/config"]).toBe("workspace:*");
+    expect(packageJson.dependencies["@forge/ui"]).toBe("workspace:*");
+    expect(packageJson.dependencies["@forge/auth"]).toBe("workspace:*");
+    expect(packageJson.dependencies.next).toBeDefined();
   });
 
   it("declares capability dependencies in package.json", () => {

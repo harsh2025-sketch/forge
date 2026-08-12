@@ -7,6 +7,7 @@
  */
 
 import type { Archetype, Capability } from "@forge/config";
+import { buildApplicationFiles } from "./app-templates.js";
 
 /** The frozen product manifest schema (V3 §8.1) fields a skeleton must carry. */
 export interface ProductSpec {
@@ -762,32 +763,6 @@ const TEST_TEMPLATES: Readonly<Record<Archetype, string>> = {
 // providers.ts — the composition root
 // ---------------------------------------------------------------------------
 
-const PROVIDERS = `/**
- * providers.ts — the product composition root.
- *
- * Frozen V3 rule 2.4 / principle P5: this is the ONLY file in the application
- * allowed to import adapter packages (packages/adapters/*). Every other module
- * imports wired ports from here, for example:
- *
- *   import { authPort } from "@/providers";
- *
- * The {{DISPLAY_NAME}} skeleton ships with no adapters wired and no vendor SDK
- * dependencies. To activate a provider:
- *
- *   1. add the adapter package (for example \`@forge/adapter-clerk\`) to the
- *      product's dependencies
- *   2. import the adapter and export it under its port type, for example:
- *
- *        import { clerkAuthAdapter } from "@forge/adapter-clerk";
- *        export const authPort = clerkAuthAdapter;
- *
- *   3. document the wiring in docs/PROVIDERS.md and docs/SETUP.md
- *
- * Provider changes never touch domain or feature code.
- */
-export {};
-`;
-
 // ---------------------------------------------------------------------------
 // product.manifest.ts
 // ---------------------------------------------------------------------------
@@ -811,6 +786,17 @@ export default defineProductManifest({
   plans: [],
   requiresWorker: {{HAS_WORKER}},
   requiresAIProvider: {{HAS_AI}},
+  providers: {
+    auth: "test",
+    billing: "test",
+  },
+  environment: [
+    { name: "DATABASE_URL", required: false, secret: true, description: "PostgreSQL connection string" },
+    { name: "AUTH_MODE", required: false, description: "test or live" },
+    { name: "BILLING_MODE", required: false, description: "test or live" },
+    { name: "DATA_MODE", required: false, description: "memory or postgres" },
+    { name: "APP_URL", required: false, description: "Public application URL" },
+  ],
 });
 `;
 
@@ -1371,18 +1357,30 @@ const DOC_TEMPLATES: Readonly<Record<(typeof REQUIRED_PRODUCT_DOCUMENTS)[number]
 
 /** Forge packages every product depends on. */
 export const BASE_PRODUCT_DEPENDENCIES: Readonly<Record<string, string>> = {
+  "@forge/auth": "workspace:*",
+  "@forge/billing": "workspace:*",
   "@forge/config": "workspace:*",
+  "@forge/db": "workspace:*",
   "@forge/domain": "workspace:*",
   "@forge/shared": "workspace:*",
+  "@forge/ui": "workspace:*",
+  "drizzle-orm": "^0.45.2",
+  next: "^15.5.21",
+  react: "^18.3.1",
+  "react-dom": "^18.3.1",
   zod: "^3.23.8",
 };
 
 /** The standard Forge dev toolchain for products. */
 export const PRODUCT_DEV_DEPENDENCIES: Readonly<Record<string, string>> = {
+  "@forge/testing": "workspace:*",
+  "@playwright/test": "^1.40.0",
   "@types/node": "^26.2.0",
+  "@types/react": "^18.3.12",
+  "@types/react-dom": "^18.3.1",
   eslint: "^8.0.0",
   typescript: "^5.8.3",
-  vitest: "^1.0.0",
+  vitest: "^3.2.6",
 };
 
 /** Workspace dependencies required by the product's declared capabilities. */
@@ -1406,10 +1404,14 @@ export function productPackageJson(spec: ProductSpec): string {
       private: true,
       type: "module",
       scripts: {
-        build: "tsc",
+        build: "next build",
+        start: "next start",
+        dev: "next dev",
         typecheck: "tsc --noEmit",
         lint: "eslint .",
         test: "vitest run",
+        e2e: "playwright test",
+        "db:migrate": "tsc -p tsconfig.build.json && node dist/db/migrate.js",
       },
       dependencies: {
         ...BASE_PRODUCT_DEPENDENCIES,
@@ -1422,29 +1424,49 @@ export function productPackageJson(spec: ProductSpec): string {
   )}\n`;
 }
 
-export function productTsconfig(spec: ProductSpec, standalone: boolean): string {
+export function productTsconfig(_spec: ProductSpec, standalone: boolean): string {
   const compilerOptions = {
     target: "ES2022",
     module: "ESNext",
-    lib: ["ES2022"],
-    declaration: true,
-    outDir: "./dist",
-    rootDir: "./src",
+    lib: ["ES2022", "DOM", "DOM.Iterable"],
+    jsx: "preserve",
+    noEmit: true,
+    incremental: true,
+    isolatedModules: true,
+    allowJs: false,
+    plugins: [{ name: "next" }],
     strict: true,
     esModuleInterop: true,
     skipLibCheck: true,
     forceConsistentCasingInFileNames: true,
     resolveJsonModule: true,
     moduleResolution: "bundler",
-    types: ["node"],
+    rootDir: ".",
+    paths: { "@/*": ["./src/*"] },
+    types: ["node", "react"],
   };
   const config = standalone
-    ? { compilerOptions, include: ["src"], exclude: ["node_modules", "dist", "**/*.test.ts"] }
+    ? {
+        compilerOptions,
+        include: ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+        exclude: ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"],
+      }
     : {
         extends: "../../tsconfig.json",
-        compilerOptions: { rootDir: "./src", outDir: "./dist", types: ["node"] },
-        include: ["src"],
-        exclude: ["node_modules", "dist", "**/*.test.ts"],
+        compilerOptions: {
+          lib: ["ES2022", "DOM", "DOM.Iterable"],
+          jsx: "preserve",
+          noEmit: true,
+          incremental: true,
+          isolatedModules: true,
+          allowJs: false,
+          plugins: [{ name: "next" }],
+          rootDir: ".",
+          paths: { "@/*": ["./src/*"] },
+          types: ["node", "react"],
+        },
+        include: ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+        exclude: ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"],
       };
   return `${JSON.stringify(config, null, 2)}\n`;
 }
@@ -1455,10 +1477,9 @@ export function productTsconfig(spec: ProductSpec, standalone: boolean): string 
 
 const DIR_README_APP = `# src/app
 
-Next.js App Router entry points for {{DISPLAY_NAME}} (V3 §3.3): layouts, marketing and
-dashboard routes, API and webhook routes, and auth middleware. This directory is
-populated during product implementation. Domain logic never lives here; see
-docs/ARCHITECTURE.md.
+Next.js App Router entry points for {{DISPLAY_NAME}} (V3 §3.3): landing page,
+workspace, health endpoint, and future product routes. Domain logic never lives
+here; see docs/ARCHITECTURE.md.
 `;
 
 const DIR_README_FEATURES = `# src/features
@@ -1516,7 +1537,7 @@ export function buildProductFileMap(spec: ProductSpec): readonly GeneratedFile[]
   files.push({ path: "README.md", content: render(README, tokens) });
   files.push({ path: "package.json", content: productPackageJson(spec) });
   files.push({ path: "tsconfig.json", content: productTsconfig(spec, false) });
-  files.push({ path: "src/providers.ts", content: render(PROVIDERS, tokens) });
+  files.push(...buildApplicationFiles(spec));
 
   files.push({ path: "src/domain/engine.ts", content: render(ENGINE_TEMPLATES[spec.primaryArchetype], tokens) });
   files.push({ path: "src/domain/types.ts", content: render(TYPES_TEMPLATES[spec.primaryArchetype], tokens) });

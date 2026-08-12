@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
-import { ExtractError, extractProduct } from "../src/index.js";
+import { ExtractError, extractProduct, exportProduct } from "../src/index.js";
 import { classifyDependency, classifyFile } from "../src/classify.js";
 import { safeDestinationPath } from "../src/scan.js";
 import type { SourceImport } from "../src/scan.js";
@@ -354,6 +354,107 @@ describe("extract-product safety", () => {
     const destination = tempDir("forge-extract-safe-");
     expect(() => safeDestinationPath(destination, "../escape.txt")).toThrow(/outside/);
     expect(fs.existsSync(path.join(path.dirname(destination), "escape.txt"))).toBe(false);
+  });
+});
+
+describe("extract-product export", () => {
+  function createForgeRepository(): { root: string; product: string } {
+    const root = tempDir("forge-export-repo-");
+    write(root, "pnpm-workspace.yaml", 'packages:\n  - "apps/*"\n  - "packages/*"\n  - "tools/*"\n');
+    write(
+      root,
+      "package.json",
+      JSON.stringify({
+        name: "forge",
+        private: true,
+        scripts: { "create-product": "should-not-be-copied", build: "turbo run build" },
+        devDependencies: { typescript: "^5.8.3" },
+      }),
+    );
+    write(root, "turbo.json", "{}\n");
+    write(root, "tsconfig.json", "{}\n");
+    write(
+      root,
+      "apps/demo/product.manifest.ts",
+      [
+        'import { defineProductManifest } from "@forge/config";',
+        "export default defineProductManifest({",
+        '  id: "demo",',
+        '  displayName: "Demo",',
+        '  tagline: "Demo product.",',
+        '  primaryArchetype: "analyzer",',
+        "  capabilities: [],",
+        "  plans: [],",
+        "  requiresWorker: false,",
+        "  requiresAIProvider: false,",
+        "});",
+        "",
+      ].join("\n"),
+    );
+    write(
+      root,
+      "apps/demo/package.json",
+      JSON.stringify({
+        name: "demo",
+        dependencies: { "@forge/shared": "workspace:*", "@forge/config": "workspace:*" },
+      }),
+    );
+    write(root, "apps/demo/src/domain/engine.ts", "export const engine = true;\n");
+    write(root, "apps/other/package.json", JSON.stringify({ name: "other" }));
+    write(root, "apps/other/src/secret.ts", "export const leaked = true;\n");
+    write(root, "packages/shared/package.json", JSON.stringify({ name: "@forge/shared" }));
+    write(root, "packages/shared/src/index.ts", "export const ok = true;\n");
+    write(
+      root,
+      "packages/config/package.json",
+      JSON.stringify({ name: "@forge/config", dependencies: { "@forge/shared": "workspace:*" } }),
+    );
+    write(root, "packages/config/src/index.ts", "export const config = true;\n");
+    write(root, "tools/create-product/package.json", JSON.stringify({ name: "@forge/create-product" }));
+    write(root, "tools/create-product/src/index.ts", "export const factory = true;\n");
+    write(root, "tools/architecture-check/package.json", JSON.stringify({ name: "@forge/architecture-check" }));
+    write(root, "tools/architecture-check/src/index.ts", "export const check = true;\n");
+    write(root, ".env", "SECRET=sk_live_do_not_copy");
+    return { root, product: "demo" };
+  }
+
+  it("exports only the requested product and its workspace packages", () => {
+    const { root, product } = createForgeRepository();
+    const destination = path.join(tempDir("forge-export-out-"), "demo-standalone");
+    const result = exportProduct({ root, product, destination });
+    expect(result.report.status).toBe("complete");
+    expect(result.report.productId).toBe("demo");
+    expect(fs.existsSync(path.join(destination, "apps/demo/product.manifest.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, "packages/shared/src/index.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, "packages/config/src/index.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, "apps/other"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, "tools/create-product"))).toBe(false);
+    expect(fs.existsSync(path.join(destination, "tools/architecture-check/src/index.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, ".env"))).toBe(false);
+    const standalone = JSON.parse(fs.readFileSync(path.join(destination, "package.json"), "utf8")) as {
+      name: string;
+      scripts: Record<string, string>;
+    };
+    expect(standalone.name).toBe("demo-standalone");
+    expect(standalone.scripts["create-product"]).toBeUndefined();
+    expect(standalone.scripts.validate).toBeDefined();
+    expect(result.report.packagesCopied).toEqual(["@forge/config", "@forge/shared"]);
+  });
+
+  it("refuses to overwrite an existing destination", () => {
+    const { root, product } = createForgeRepository();
+    const destination = tempDir("forge-export-existing-");
+    expect(() => exportProduct({ root, product, destination })).toThrow(/already exists/);
+  });
+
+  it("exports via --export on the CLI", () => {
+    const cli = path.resolve("dist/cli.js");
+    const { root, product } = createForgeRepository();
+    const destination = path.join(tempDir("forge-export-cli-"), "out");
+    const run = spawnSync(process.execPath, [cli, "--export", "--root", root, product, destination], { encoding: "utf8" });
+    expect(run.status).toBe(0);
+    expect(fs.existsSync(path.join(destination, "apps/demo/product.manifest.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(destination, "extraction-export-report.json"))).toBe(true);
   });
 });
 

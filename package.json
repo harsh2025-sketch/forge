@@ -11,16 +11,18 @@
   "packageManager": "pnpm@11.21.0",
   "scripts": {
     "arch-check": "pnpm --filter @forge/architecture-check build && pnpm --filter @forge/architecture-check check",
+    "audit": "pnpm audit --audit-level=high",
     "build": "turbo run build",
-    "create-product": "pnpm --filter @forge/create-product build && pnpm --filter @forge/create-product check",
+    "create-product": "pnpm --filter @forge/create-product build && node tools/create-product/dist/cli.js --root .",
     "dev": "turbo run dev",
-    "extract-product": "pnpm --filter @forge/extract-product build && pnpm --filter @forge/extract-product check",
-    "extraction-validate": "pnpm --filter @forge/extraction-validate build && pnpm --filter @forge/extraction-validate check",
+    "extract-product": "pnpm --filter @forge/extract-product build && node tools/extract-product/dist/cli.js",
+    "extraction-validate": "pnpm --filter @forge/extraction-validate build && node tools/extraction-validate/dist/cli.js --root .",
     "lint": "turbo run lint",
     "prepare": "pnpm setup-hooks",
     "setup-hooks": "git config core.hooksPath .githooks",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "validate": "pnpm arch-check && pnpm validate-docs && pnpm lint && pnpm typecheck && pnpm test",
     "validate-docs": "pnpm --filter @forge/validate-docs build && pnpm --filter @forge/validate-docs check"
   },
   "keywords": [

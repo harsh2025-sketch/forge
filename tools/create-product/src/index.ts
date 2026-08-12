@@ -212,4 +212,4 @@ export {
 export type { GeneratedFile, ProductSpec } from "./templates.js";
 export { extractManifestObject } from "./manifest.js";
 export type { ManifestExtractionResult } from "./manifest.js";
-export { isValidProductId, slugifyProductId, toHumanName } from "./names.js";
+export { isValidProductId, schemaName, slugifyProductId, toHumanName } from "./names.js";

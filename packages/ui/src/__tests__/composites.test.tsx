@@ -10,7 +10,9 @@ import { FormField } from "../composites/form-field.js";
 import { StatusBadge } from "../composites/status-badge.js";
 import { SeverityBadge } from "../composites/severity-badge.js";
 import { EmptyState } from "../composites/empty-state.js";
+import { ErrorState } from "../composites/error-state.js";
 import { LoadingState } from "../composites/loading-state.js";
+import { Notice } from "../composites/notice.js";
 import { Pagination } from "../composites/pagination.js";
 import { Input } from "../primitives/input.js";
 
@@ -134,6 +136,36 @@ describe("EmptyState", () => {
     expect(html).toContain("Nothing here");
     expect(html).toContain("Try adjusting filters");
     expect(html).toContain("Reset");
+  });
+});
+
+describe("ErrorState", () => {
+  it("renders an accessible alert with semantic error tokens", () => {
+    const html = renderToString(
+      <ErrorState title="Scan failed" description="The token could not be parsed">
+        <button type="button">Retry</button>
+      </ErrorState>,
+    );
+    expect(html).toContain("forge-error-state");
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("Scan failed");
+    expect(html).toContain("The token could not be parsed");
+    expect(html).toContain("Retry");
+    expect(html).toContain("color:var(--forge-colors-semantic-error)");
+  });
+});
+
+describe("Notice", () => {
+  it("uses status for informational notices and alert for errors", () => {
+    const info = renderToString(<Notice title="Saved" description="Changes stored" tone="info" />);
+    expect(info).toContain("forge-notice--info");
+    expect(info).toContain('role="status"');
+    expect(info).toContain("Saved");
+
+    const error = renderToString(<Notice title="Denied" tone="error" />);
+    expect(error).toContain("forge-notice--error");
+    expect(error).toContain('role="alert"');
+    expect(error).toContain("color:var(--forge-colors-semantic-error)");
   });
 });
 

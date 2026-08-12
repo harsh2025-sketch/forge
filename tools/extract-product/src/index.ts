@@ -49,16 +49,12 @@ import type {
 import { dependencyRoot, extractImports, isCodeFile, safeDestinationPath, scanSource } from "./scan.js";
 import type { SourceImport } from "./scan.js";
 
-export class ExtractError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ExtractError";
-  }
-}
-
-export const TOOL_VERSION = "0.0.1";
+export { ExtractError, TOOL_VERSION } from "./errors.js";
+import { ExtractError, TOOL_VERSION } from "./errors.js";
 
 // Re-exports for consumers of the extraction model (e.g. extraction-validate).
+export { exportProduct } from "./export-product.js";
+export type { ExportOptions, ExportReport, ExportResult } from "./export-product.js";
 export { classifyDependency, classifyFile } from "./classify.js";
 export {
   DATABASE_DEPENDENCIES,
